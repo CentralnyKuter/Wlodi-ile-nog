@@ -182,15 +182,32 @@
             });
         }
 
-        function populateDeviceSelection() {
+        function addSelectedDevice() {
             const select = document.getElementById('device-select');
-            select.innerHTML = '';
-            availableDevices.forEach(device => {
-                const option = document.createElement('option');
-                option.value = device.id;
-                option.textContent = device.nazwa;
-                select.appendChild(option);
+            const selectedId = select.value;
+            const selectedDevice = availableDevices.find(device => device.id == selectedId);
+
+            if (selectedDevice) {
+                devices.push(selectedDevice);
+                availableDevices = availableDevices.filter(device => device.id != selectedId);
+                renderDeviceList();
+                populateDeviceSelection();
+            }
+        }
+
+        function calculateEnergy() {
+            let total = 0;
+            document.querySelectorAll('#device-list .device-container').forEach(container => {
+                const checkbox = container.querySelector('input[type="checkbox"]');
+                const quantityInput = container.querySelector('input[type="number"]');
+
+                if (checkbox.checked) {
+                    total += parseInt(checkbox.value) * parseInt(quantityInput.value);
+                }
             });
+
+            document.getElementById('total-energy').textContent = `Całkowity pobór: ${total} W`;
+            localStorage.setItem('total-energy', total);
         }
     </script>
 
