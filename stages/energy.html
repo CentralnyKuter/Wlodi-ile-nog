@@ -65,6 +65,27 @@
             width: var(--checkbox-size);
             height: var(--checkbox-size);
         }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .quantity-button {
+            background-color: #666;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: var(--button-size);
+            border-radius: 5px;
+        }
+
+        .quantity-input {
+            width: var(--input-width);
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -85,7 +106,7 @@
         fetch('/Wlodi-ile-nog/data/devices.json')
             .then(response => response.json())
             .then(data => {
-                devices = data.slice(0, maxInitialDevices);
+                devices = data.slice(0, maxInitialDevices).map(device => ({ ...device, quantity: 1 }));
                 availableDevices = data.slice(maxInitialDevices);
                 renderDeviceList();
                 populateDeviceSelection();
@@ -128,23 +149,43 @@
                 const label = document.createElement('label');
                 label.textContent = `${device.nazwa} (${device.pobor} W)`;
                 
+                const quantityControls = document.createElement('div');
+                quantityControls.classList.add('quantity-controls');
+
+                const minusButton = document.createElement('button');
+                minusButton.textContent = '-';
+                minusButton.classList.add('quantity-button');
+                minusButton.onclick = () => updateQuantity(device.id, -1);
+
+                const quantityInput = document.createElement('input');
+                quantityInput.type = 'number';
+                quantityInput.value = device.quantity;
+                quantityInput.classList.add('quantity-input');
+                quantityInput.readOnly = true;
+
+                const plusButton = document.createElement('button');
+                plusButton.textContent = '+';
+                plusButton.classList.add('quantity-button');
+                plusButton.onclick = () => updateQuantity(device.id, 1);
+
+                quantityControls.appendChild(minusButton);
+                quantityControls.appendChild(quantityInput);
+                quantityControls.appendChild(plusButton);
+
                 labelContainer.appendChild(checkbox);
                 labelContainer.appendChild(label);
-                
                 container.appendChild(labelContainer);
+                container.appendChild(quantityControls);
                 listDiv.appendChild(container);
             });
         }
 
-        function addSelectedDevice() {
-            const select = document.getElementById('device-select');
-            const selectedId = select.value;
-            const selectedDevice = availableDevices.find(d => d.id == selectedId);
-            if (selectedDevice) {
-                devices.push(selectedDevice);
-                availableDevices = availableDevices.filter(d => d.id != selectedId);
+        function updateQuantity(id, change) {
+            const device = devices.find(d => d.id === id);
+            if (device) {
+                device.quantity = Math.max(1, device.quantity + change);
                 renderDeviceList();
-                populateDeviceSelection();
+                calculateEnergy();
             }
         }
 
@@ -153,7 +194,7 @@
             devices.forEach(device => {
                 const checkbox = document.getElementById('device-' + device.id);
                 if (checkbox && checkbox.checked) {
-                    totalPower += parseInt(device.pobor);
+                    totalPower += parseInt(device.pobor) * device.quantity;
                 }
             });
             document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
