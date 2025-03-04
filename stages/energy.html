@@ -143,48 +143,43 @@
                 labelContainer.appendChild(checkbox);
                 labelContainer.appendChild(label);
                 
+                const quantityContainer = document.createElement('div');
+                quantityContainer.classList.add('quantity-controls');
+
+                const minusButton = document.createElement('button');
+                minusButton.textContent = '-';
+                minusButton.classList.add('quantity-button');
+                minusButton.onclick = () => {
+                    if (quantityInput.value > 1) {
+                        quantityInput.value = parseInt(quantityInput.value) - 1;
+                        localStorage.setItem('quantity-' + device.id, quantityInput.value);
+                        calculateEnergy();
+                    }
+                };
+
+                const quantityInput = document.createElement('input');
+                quantityInput.type = 'number';
+                quantityInput.min = 1;
+                quantityInput.value = localStorage.getItem('quantity-' + device.id) || 1;
+                quantityInput.classList.add('quantity-input');
+                
+                const plusButton = document.createElement('button');
+                plusButton.textContent = '+';
+                plusButton.classList.add('quantity-button');
+                plusButton.onclick = () => {
+                    quantityInput.value = parseInt(quantityInput.value) + 1;
+                    localStorage.setItem('quantity-' + device.id, quantityInput.value);
+                    calculateEnergy();
+                };
+                
+                quantityContainer.appendChild(minusButton);
+                quantityContainer.appendChild(quantityInput);
+                quantityContainer.appendChild(plusButton);
+                
                 container.appendChild(labelContainer);
+                container.appendChild(quantityContainer);
                 listDiv.appendChild(container);
             });
-        }
-
-        function populateDeviceSelection() {
-            const select = document.getElementById('device-select');
-            select.innerHTML = '';
-            availableDevices.forEach(device => {
-                const option = document.createElement('option');
-                option.value = device.id;
-                option.textContent = device.nazwa;
-                select.appendChild(option);
-            });
-        }
-
-        function addSelectedDevice() {
-            const select = document.getElementById('device-select');
-            const selectedId = select.value;
-            const selectedDevice = availableDevices.find(device => device.id == selectedId);
-
-            if (selectedDevice) {
-                devices.push(selectedDevice);
-                availableDevices = availableDevices.filter(device => device.id != selectedId);
-                renderDeviceList();
-                populateDeviceSelection();
-            }
-        }
-
-        function calculateEnergy() {
-            let total = 0;
-            document.querySelectorAll('#device-list .device-container').forEach(container => {
-                const checkbox = container.querySelector('input[type="checkbox"]');
-                const quantityInput = container.querySelector('input[type="number"]');
-
-                if (checkbox && checkbox.checked && quantityInput) {
-                    total += parseInt(checkbox.value) * parseInt(quantityInput.value);
-                }
-            });
-
-            document.getElementById('total-energy').textContent = `Całkowity pobór: ${total} W`;
-            localStorage.setItem('total-energy', total);
         }
     </script>
 
