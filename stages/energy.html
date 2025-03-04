@@ -199,6 +199,51 @@
             });
             document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
         }
+function addSelectedDevice() {
+    const select = document.getElementById('device-select');
+    const selectedId = select.value;
+    const selectedDevice = availableDevices.find(d => d.id == selectedId);
+
+    if (!selectedDevice) return; // Jeśli nic nie wybrano, nie rób nic
+
+    // Tworzenie nowej linijki urządzenia
+    const container = document.createElement('div');
+    container.classList.add('device-container');
+
+    const labelContainer = document.createElement('div');
+    labelContainer.classList.add('device-label');
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = selectedDevice.pobor;
+    checkbox.id = 'device-' + selectedDevice.id;
+
+    checkbox.addEventListener('change', calculateEnergy);
+
+    const label = document.createElement('label');
+    label.textContent = `${selectedDevice.nazwa} (${selectedDevice.pobor} W)`;
+    label.setAttribute("for", checkbox.id);
+
+    // Dodanie elementów do listy
+    labelContainer.appendChild(checkbox);
+    labelContainer.appendChild(label);
+    container.appendChild(labelContainer);
+    document.getElementById('device-list').appendChild(container);
+
+    // Usunięcie urządzenia z dostępnych opcji
+    availableDevices = availableDevices.filter(d => d.id != selectedId);
+    select.remove(select.selectedIndex);
+
+    // Dodanie do listy urządzeń
+    devices.push(selectedDevice);
+
+    // Od razu przeliczenie energii
+    calculateEnergy();
+}
+
+
+
+        
     </script>
 </body>
 </html>
