@@ -94,7 +94,8 @@
     <div class="container">
         <h2>Wybierz urządzenia</h2>
         <div id="device-list"></div>
-        <button class="button" onclick="showDeviceSelection()">Dodaj urządzenie</button>
+        <select id="device-select"></select>
+        <button class="button" onclick="addSelectedDevice()">Dodaj urządzenie</button>
         <button class="button" onclick="calculateEnergy()">Oblicz pobór prądu</button>
         <h3 id="total-energy">Całkowity pobór: 0 W</h3>
     </div>
@@ -110,6 +111,7 @@
                 devices = data.slice(0, maxInitialDevices);
                 availableDevices = data.slice(maxInitialDevices);
                 renderDeviceList();
+                populateDeviceSelection();
             })
             .catch(error => console.error("Błąd ładowania danych:", error));
 
@@ -140,70 +142,39 @@
 
                 labelContainer.appendChild(checkbox);
                 labelContainer.appendChild(label);
-
-                const quantityContainer = document.createElement('div');
-                quantityContainer.classList.add('quantity-controls');
-
-                const minusButton = document.createElement('button');
-                minusButton.textContent = '-';
-                minusButton.classList.add('quantity-button');
-                minusButton.onclick = () => {
-                    if (quantityInput.value > 1) {
-                        quantityInput.value = parseInt(quantityInput.value) - 1;
-                        localStorage.setItem('quantity-' + device.id, quantityInput.value);
-                        calculateEnergy();
-                    }
-                };
-
-                const quantityInput = document.createElement('input');
-                quantityInput.type = 'number';
-                quantityInput.min = 1;
-                quantityInput.value = localStorage.getItem('quantity-' + device.id) || 1;
-                quantityInput.classList.add('quantity-input');
-                quantityInput.disabled = !checkbox.checked;
-                
-                quantityInput.addEventListener('input', () => {
-                    if (quantityInput.value < 1) quantityInput.value = 1;
-                    localStorage.setItem('quantity-' + device.id, quantityInput.value);
-                    calculateEnergy();
-                });
-
-                const plusButton = document.createElement('button');
-                plusButton.textContent = '+';
-                plusButton.classList.add('quantity-button');
-                plusButton.onclick = () => {
-                    quantityInput.value = parseInt(quantityInput.value) + 1;
-                    localStorage.setItem('quantity-' + device.id, quantityInput.value);
-                    calculateEnergy();
-                };
-
-                checkbox.addEventListener('change', () => {
-                    quantityInput.disabled = !checkbox.checked;
-                });
-
-                quantityContainer.appendChild(minusButton);
-                quantityContainer.appendChild(quantityInput);
-                quantityContainer.appendChild(plusButton);
-
                 container.appendChild(labelContainer);
-                container.appendChild(quantityContainer);
                 listDiv.appendChild(container);
             });
         }
 
-        function showDeviceSelection() {
-            if (availableDevices.length > 0) {
-                const nextDevice = availableDevices.shift();
-                devices.push(nextDevice);
+        function populateDeviceSelection() {
+            const select = document.getElementById('device-select');
+            select.innerHTML = '';
+            availableDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.id;
+                option.textContent = device.nazwa;
+                select.appendChild(option);
+            });
+        }
+
+        function addSelectedDevice() {
+            const select = document.getElementById('device-select');
+            const selectedId = select.value;
+            const selectedDevice = availableDevices.find(device => device.id == selectedId);
+            
+            if (selectedDevice) {
+                devices.push(selectedDevice);
+                availableDevices = availableDevices.filter(device => device.id != selectedId);
                 renderDeviceList();
+                populateDeviceSelection();
             }
         }
 
         function calculateEnergy() {
             let total = 0;
             document.querySelectorAll('#device-list input[type="checkbox"]:checked').forEach(checkbox => {
-                const quantityInput = checkbox.parentElement.parentElement.querySelector('input[type="number"]');
-                total += parseInt(checkbox.value) * parseInt(quantityInput.value);
+                total += parseInt(checkbox.value);
             });
             document.getElementById('total-energy').textContent = `Całkowity pobór: ${total} W`;
             localStorage.setItem('total-energy', total);
