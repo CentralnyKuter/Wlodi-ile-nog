@@ -1,3 +1,74 @@
-<a href="stages/podest.html">
-  <button>Przejdź do wizualizacji podestu</button>
-</a>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strona Startowa</title>
+    <style>
+        /* Kolory i wygląd przycisków */
+        :root {
+            --btn-bg: #FF9800; /* Kolor tła przycisków */
+            --btn-hover: #E68900; /* Kolor tła przycisku po najechaniu */
+            --btn-text: #FFFFFF; /* Kolor tekstu na przyciskach */
+            --label-color: #CCCCCC; /* Kolor tekstu w labelu */
+        }
+
+        /* Globalne style */
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: url('images/1.jpg') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Okienko z przyciskami */
+        .container {
+            background: rgba(30, 30, 30, 0.85); /* Półprzezroczyste tło */
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            min-width: 300px;
+        }
+
+        /* Nagłówek */
+        h1 {
+            color: var(--label-color);
+            margin-bottom: 20px;
+        }
+
+        /* Przyciski */
+        .button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
+            transition: background 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: var(--btn-hover);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Wybierz opcję</h1>
+        <a href="stages/podest.html">
+            <button class="button">Włodi, ile nóg...?</button>
+        </a>
+        <button class="button">Panie, ile to żre...?</button>
+    </div>
+</body>
+</html>
