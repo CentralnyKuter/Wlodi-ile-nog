@@ -31,9 +31,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             display: inline-block;
             text-align: left;
-            width: 90%;
-            max-width: 400px;
-            margin: auto;
+            width: 400px;
         }
 
         .button {
@@ -44,7 +42,6 @@
             margin-top: 10px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1em;
         }
 
         .button:hover {
@@ -56,74 +53,17 @@
             justify-content: space-between;
             align-items: center;
             padding: 5px 0;
-            flex-wrap: wrap; /* Dla telefonów */
         }
 
         .device-label {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 1em;
         }
 
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .quantity-button {
-            background-color: #666;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-size: var(--button-size);
-            border-radius: 5px;
-        }
-
-        .quantity-input {
-            width: var(--input-width);
-            text-align: center;
-            -moz-appearance: textfield; /* Usuwa strzałki w Firefox */
-        }
-
-        .quantity-input::-webkit-outer-spin-button,
-        .quantity-input::-webkit-inner-spin-button {
-            -webkit-appearance: none; /* Usuwa strzałki w Chrome, Edge, Safari */
-            margin: 0;
-        }
-
-        /* RESPONSYWNOŚĆ */
-        @media (max-width: 600px) {
-            .container {
-                width: 95%;
-            }
-
-            .device-label {
-                font-size: 0.9em;
-            }
-
-            .quantity-input {
-                width: 40px;
-            }
-
-            .button {
-                padding: 8px;
-                font-size: 0.9em;
-            }
-
-            .quantity-button {
-                font-size: 20px;
-                padding: 4px 8px;
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .container {
-                width: 50%;
-                max-width: 500px;
-            }
+        input[type="checkbox"] {
+            width: var(--checkbox-size);
+            height: var(--checkbox-size);
         }
     </style>
 </head>
@@ -140,12 +80,13 @@
     <script>
         let devices = [];
         let availableDevices = [];
-        
+        const maxInitialDevices = 6;
+
         fetch('/Wlodi-ile-nog/data/devices.json')
             .then(response => response.json())
             .then(data => {
-                devices = data.slice(0, 5);
-                availableDevices = data.slice(5);
+                devices = data.slice(0, maxInitialDevices);
+                availableDevices = data.slice(maxInitialDevices);
                 renderDeviceList();
                 populateDeviceSelection();
             })
@@ -153,18 +94,7 @@
 
         function populateDeviceSelection() {
             const select = document.getElementById('device-select');
-            const addButton = document.querySelector('.button[onclick="addSelectedDevice()"]');
-
             select.innerHTML = '';
-            if (availableDevices.length === 0) {
-                select.style.display = 'none';
-                addButton.style.display = 'none';
-                return;
-            }
-
-            select.style.display = 'inline-block';
-            addButton.style.display = 'inline-block';
-
             availableDevices.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.id;
@@ -176,66 +106,57 @@
         function renderDeviceList() {
             const listDiv = document.getElementById('device-list');
             listDiv.innerHTML = '';
-            devices.forEach(device => addDeviceToList(device));
+            
+            devices.forEach(device => {
+                const container = document.createElement('div');
+                container.classList.add('device-container');
+                
+                const labelContainer = document.createElement('div');
+                labelContainer.classList.add('device-label');
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = device.pobor;
+                checkbox.id = 'device-' + device.id;
+                checkbox.checked = localStorage.getItem(checkbox.id) === 'true';
+                
+                checkbox.addEventListener('change', () => {
+                    localStorage.setItem(checkbox.id, checkbox.checked);
+                    calculateEnergy();
+                });
+
+                const label = document.createElement('label');
+                label.textContent = `${device.nazwa} (${device.pobor} W)`;
+                
+                labelContainer.appendChild(checkbox);
+                labelContainer.appendChild(label);
+                
+                container.appendChild(labelContainer);
+                listDiv.appendChild(container);
+            });
         }
 
-        function addDeviceToList(device) {
-            const container = document.createElement('div');
-            container.classList.add('device-container');
+        function addSelectedDevice() {
+            const select = document.getElementById('device-select');
+            const selectedId = select.value;
+            const selectedDevice = availableDevices.find(d => d.id == selectedId);
+            if (selectedDevice) {
+                devices.push(selectedDevice);
+                availableDevices = availableDevices.filter(d => d.id != selectedId);
+                renderDeviceList();
+                populateDeviceSelection();
+            }
+        }
 
-            const labelContainer = document.createElement('div');
-            labelContainer.classList.add('device-label');
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = device.pobor;
-            checkbox.id = 'device-' + device.id;
-            checkbox.checked = true;
-            checkbox.addEventListener('change', calculateEnergy);
-
-            const label = document.createElement('label');
-            label.textContent = `${device.nazwa} (${device.pobor} W)`;
-
-            const quantityContainer = document.createElement('div');
-            quantityContainer.classList.add('quantity-controls');
-
-            const minusButton = document.createElement('button');
-            minusButton.textContent = "−";
-            minusButton.classList.add('quantity-button');
-            minusButton.onclick = function () {
-                let input = document.getElementById('quantity-' + device.id);
-                if (input.value > 1) {
-                    input.value--;
-                    calculateEnergy();
+        function calculateEnergy() {
+            let totalPower = 0;
+            devices.forEach(device => {
+                const checkbox = document.getElementById('device-' + device.id);
+                if (checkbox && checkbox.checked) {
+                    totalPower += parseInt(device.pobor);
                 }
-            };
-
-            const quantityInput = document.createElement('input');
-            quantityInput.type = 'number';
-            quantityInput.value = 1;
-            quantityInput.min = 1;
-            quantityInput.id = 'quantity-' + device.id;
-            quantityInput.classList.add('quantity-input');
-            quantityInput.oninput = calculateEnergy;
-
-            const plusButton = document.createElement('button');
-            plusButton.textContent = "+";
-            plusButton.classList.add('quantity-button');
-            plusButton.onclick = function () {
-                let input = document.getElementById('quantity-' + device.id);
-                input.value++;
-                calculateEnergy();
-            };
-
-            labelContainer.appendChild(checkbox);
-            labelContainer.appendChild(label);
-            quantityContainer.appendChild(minusButton);
-            quantityContainer.appendChild(quantityInput);
-            quantityContainer.appendChild(plusButton);
-
-            container.appendChild(labelContainer);
-            container.appendChild(quantityContainer);
-            document.getElementById('device-list').appendChild(container);
+            });
+            document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
         }
     </script>
 </body>
