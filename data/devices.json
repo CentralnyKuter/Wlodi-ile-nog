@@ -1,1 +1,8 @@
 
+[
+    { "id": 1, "nazwa": "Lodówka", "pobor": 150 },
+    { "id": 2, "nazwa": "Pralka", "pobor": 1000 },
+    { "id": 3, "nazwa": "Klimatyzacja", "pobor": 2000 },
+    { "id": 4, "nazwa": "Komputer", "pobor": 400 },
+    { "id": 5, "nazwa": "Telewizor", "pobor": 150 }
+]
