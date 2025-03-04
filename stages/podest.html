@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Wizualizacja sceny z panelami – DARK THEME</title>
+  <!-- Dołączamy biblioteki html2canvas i jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     :root {
       --container-bg: rgba(30, 30, 30, 0.85);
@@ -18,6 +21,7 @@
       background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
       background-size: cover;
       color: #FFFFFF;
+      text-align: center;
     }
     /* Kontener formularza – półprzezroczyste okienko */
     .container {
@@ -26,7 +30,7 @@
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
       max-width: 350px;
-      margin: auto;
+      margin: 20px auto;
       text-align: left;
     }
     /* Kontener widoku sceny – półprzezroczysty, dopasowujący się do zawartości */
@@ -50,7 +54,7 @@
       display: inline-block;
       vertical-align: middle;
     }
-    /* Kontrolki przycisków i inputa – zachowujemy flex, bo działa poprawnie */
+    /* Kontrolki przycisków i inputa – używamy flex */
     .quantity-controls {
       display: flex;
       align-items: center;
@@ -93,7 +97,7 @@
     form button:hover {
       background-color: var(--button-hover);
     }
-    /* Kontener sceny – będzie miał rozmiar ustawiony dynamicznie przez skrypt */
+    /* Kontener sceny – rozmiar ustawiany dynamicznie przez skrypt */
     #stage {
       position: relative;
       background-color: #1E1E1E;
@@ -109,15 +113,9 @@
       color: #FFFFFF;
       box-sizing: border-box;
     }
-    .primary {
-      background-color: #4CAF50;
-    }
-    .rotated {
-      background-color: #FF5722;
-    }
-    .small {
-      background-color: #3F51B5;
-    }
+    .primary { background-color: #4CAF50; }
+    .rotated { background-color: #FF5722; }
+    .small { background-color: #3F51B5; }
     .leg {
       position: absolute;
       width: 8px;
@@ -127,7 +125,7 @@
       background-color: grey;
       pointer-events: none;
     }
-    /* Nowe podsumowanie – umieszczone w kontenerze formularza */
+    /* Podsumowanie danych (w formularzu) */
     #dataSummary {
       margin-top: 20px;
       padding: 10px;
@@ -137,10 +135,25 @@
       font-weight: bold;
       text-align: center;
     }
+    /* Przycisk generujący PDF */
+    #pdfButton {
+      margin: 20px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: bold;
+      background-color: var(--button-bg);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #pdfButton:hover {
+      background-color: var(--button-hover);
+    }
   </style>
 </head>
 <body>
-  <!-- Kontener formularza oraz podsumowania -->
+  <!-- Kontener formularza, podsumowania i danych wejściowych -->
   <div class="container">
     <h2>Włodi, ile nóg?</h2>
     <form id="stageForm">
@@ -171,17 +184,20 @@
       </div>
       <button type="button" onclick="drawStage()">Generuj podest</button>
     </form>
-    <!-- Podsumowanie danych (umieszczone w tym samym kontenerze) -->
+    <!-- Podsumowanie danych -->
     <div id="dataSummary">
       Liczba podestów: 0<br>
       Liczba nóg: 0
     </div>
   </div>
 
-  <!-- Kontener widoku sceny opakowany w półprzezroczysty div -->
+  <!-- Kontener widoku sceny -->
   <div class="stage-container">
     <div id="stage"></div>
   </div>
+
+  <!-- Przycisk generujący PDF -->
+  <button id="pdfButton" type="button" onclick="generatePDF()">Generuj PDF</button>
 
   <script>
     // Funkcje do zwiększania/zmniejszania wartości pól
@@ -196,13 +212,13 @@
       }
     }
 
-    // Funkcja rysująca scenę
+    // Funkcja rysująca scenę – stosujemy stały scale = 50px/m dla wizualizacji na stronie
     window.drawStage = function drawStage() {
       console.log('Funkcja drawStage() została wywołana');
       const sceneWidth = parseInt(document.getElementById('sceneWidth').value);
       const sceneHeight = parseInt(document.getElementById('sceneHeight').value);
       const orientation = document.querySelector('input[name="orientation"]:checked').value;
-      const scale = 50; // 1 m = 50px
+      const scale = 50; // 1 m = 50px (stała wartość)
 
       const stageDiv = document.getElementById('stage');
       stageDiv.innerHTML = '';
@@ -378,18 +394,53 @@
       
       const totalPanels = primaryCount + rotatedCount;
       const totalLegs = usedCornersMain.size + usedCornersAddons.size;
-      // Aktualizacja podsumowania w kontenerze formularza
+      // Aktualizacja podsumowania
       const dataSummaryDiv = document.getElementById('dataSummary');
       dataSummaryDiv.innerHTML = `
         Liczba podestów: ${totalPanels}<br>
         Liczba nóg: ${totalLegs}
       `;
     };
-  </script>
 
-  <script>
+    // Funkcja generująca PDF z kontenera ze sceną oraz tekstowym podsumowaniem
+    function generatePDF() {
+      // Wybieramy kontener ze sceną
+      const stageContainer = document.querySelector('.stage-container');
+      // Pobieramy tekst z podsumowania
+      const summaryText = document.getElementById('dataSummary').innerText;
+      
+      html2canvas(stageContainer).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'pt',
+          format: 'a4'
+        });
+        
+        // Obliczamy szerokość strony PDF
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        // Ustawiamy, aby obraz zajmował 80% szerokości strony PDF
+        const targetImageWidth = pdfWidth * 0.8;
+        const marginLeft = (pdfWidth - targetImageWidth) / 2;
+        // Obliczamy wysokość obrazu przy zachowaniu proporcji
+        const imgHeight = (canvas.height * targetImageWidth) / canvas.width;
+        
+        // Dodajemy obraz sceny na górze PDF, wyśrodkowany
+        pdf.addImage(imgData, 'PNG', marginLeft, 20, targetImageWidth, imgHeight);
+        
+        // Dodajemy tekst pod obrazem
+        const textY = 20 + imgHeight + 20; // margines 20pt od góry, 20pt między obrazem a tekstem
+        pdf.setFontSize(12);
+        const lines = pdf.splitTextToSize(summaryText, pdfWidth - 40);
+        pdf.text(lines, 20, textY);
+        
+        pdf.save("wizualizacja.pdf");
+      });
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-      console.log("Test: drawStage jest dostępna.");
+      console.log("Skrypt jest załadowany.");
     });
   </script>
 </body>
