@@ -14,11 +14,11 @@
       --input-width: 30px;
       --button-size: 12px;
     }
-    /* Tło strony: obrazek 3.jpg */
+    /* Tło strony: obrazek 2.jpg */
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
-      background: url('/Wlodi-ile-nog/images/3.jpg') no-repeat center center fixed;
+      background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
       background-size: cover;
       color: #FFFFFF;
       text-align: center;
@@ -137,7 +137,7 @@
     }
     /* Przycisk generujący PDF */
     #pdfButton {
-      margin: 20px;
+      margin: 20px 0 0 0;
       padding: 10px 20px;
       font-size: 14px;
       font-weight: bold;
@@ -146,6 +146,9 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      display: block;
+      width: 100%;
+      text-align: center;
     }
     #pdfButton:hover {
       background-color: var(--button-hover);
@@ -153,7 +156,7 @@
   </style>
 </head>
 <body>
-  <!-- Kontener formularza, podsumowania i danych wejściowych -->
+  <!-- Kontener formularza, podsumowania, danych wejściowych i przycisku PDF -->
   <div class="container">
     <h2>Włodi, ile nóg?</h2>
     <form id="stageForm">
@@ -189,15 +192,14 @@
       Liczba podestów: 0<br>
       Liczba nóg: 0
     </div>
+    <!-- Przycisk generujący PDF -->
+    <button id="pdfButton" type="button" onclick="generatePDF()">Generuj PDF</button>
   </div>
 
   <!-- Kontener widoku sceny -->
   <div class="stage-container">
     <div id="stage"></div>
   </div>
-
-  <!-- Przycisk generujący PDF -->
-  <button id="pdfButton" type="button" onclick="generatePDF()">Generuj PDF</button>
 
   <script>
     // Funkcje do zwiększania/zmniejszania wartości pól
@@ -212,13 +214,13 @@
       }
     }
 
-    // Funkcja rysująca scenę – stosujemy stały scale = 50px/m dla wizualizacji na stronie
+    // Funkcja rysująca scenę – stała skala 50px/m dla wizualizacji na stronie
     window.drawStage = function drawStage() {
       console.log('Funkcja drawStage() została wywołana');
       const sceneWidth = parseInt(document.getElementById('sceneWidth').value);
       const sceneHeight = parseInt(document.getElementById('sceneHeight').value);
       const orientation = document.querySelector('input[name="orientation"]:checked').value;
-      const scale = 50; // 1 m = 50px (stała wartość)
+      const scale = 50; // 1 m = 50px
 
       const stageDiv = document.getElementById('stage');
       stageDiv.innerHTML = '';
@@ -426,7 +428,7 @@
         // Obliczamy wysokość obrazu przy zachowaniu proporcji
         const imgHeight = (canvas.height * targetImageWidth) / canvas.width;
         
-        // Dodajemy obraz sceny na górze PDF, wyśrodkowany
+        // Dodajemy obraz sceny na górze PDF, wyśrodkowany, z górnym marginesem 20pt
         pdf.addImage(imgData, 'PNG', marginLeft, 20, targetImageWidth, imgHeight);
         
         // Dodajemy tekst pod obrazem
