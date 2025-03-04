@@ -35,6 +35,28 @@
         .button:hover {
             background-color: #E68900;
         }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .quantity-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-button {
+            background-color: #666;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 18px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -49,15 +71,16 @@
     <script>
         let devices = [];
 
-        // Pobierz dane z JSON-a
         fetch('../data/devices.json')
             .then(response => response.json())
             .then(data => {
                 devices = data;
                 const listDiv = document.getElementById('device-list');
 
-                // Tworzenie listy checkboxów
                 devices.forEach(device => {
+                    const container = document.createElement('div');
+                    container.classList.add('quantity-container');
+
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.value = device.pobor;
@@ -73,27 +96,66 @@
                     label.textContent = device.nazwa;
                     label.style.marginLeft = '10px';
 
-                    const div = document.createElement('div');
-                    div.appendChild(checkbox);
-                    div.appendChild(label);
+                    const quantityInput = document.createElement('input');
+                    quantityInput.type = 'number';
+                    quantityInput.min = 1;
+                    quantityInput.value = localStorage.getItem('quantity-' + device.id) || 1;
+                    quantityInput.style.width = '50px';
+                    quantityInput.style.textAlign = 'center';
+                    quantityInput.disabled = !checkbox.checked;
+                    
+                    quantityInput.addEventListener('input', () => {
+                        if (quantityInput.value < 1) quantityInput.value = 1;
+                        localStorage.setItem('quantity-' + device.id, quantityInput.value);
+                        calculateEnergy();
+                    });
 
-                    listDiv.appendChild(div);
+                    const plusButton = document.createElement('button');
+                    plusButton.textContent = '+';
+                    plusButton.classList.add('quantity-button');
+                    plusButton.onclick = () => {
+                        quantityInput.value = parseInt(quantityInput.value) + 1;
+                        localStorage.setItem('quantity-' + device.id, quantityInput.value);
+                        calculateEnergy();
+                    };
+
+                    const minusButton = document.createElement('button');
+                    minusButton.textContent = '-';
+                    minusButton.classList.add('quantity-button');
+                    minusButton.onclick = () => {
+                        if (quantityInput.value > 1) {
+                            quantityInput.value = parseInt(quantityInput.value) - 1;
+                            localStorage.setItem('quantity-' + device.id, quantityInput.value);
+                            calculateEnergy();
+                        }
+                    };
+
+                    checkbox.addEventListener('change', () => {
+                        quantityInput.disabled = !checkbox.checked;
+                    });
+
+                    container.appendChild(checkbox);
+                    container.appendChild(label);
+                    container.appendChild(minusButton);
+                    container.appendChild(quantityInput);
+                    container.appendChild(plusButton);
+
+                    listDiv.appendChild(container);
                 });
                 calculateEnergy();
             })
             .catch(error => console.error("Błąd ładowania danych:", error));
 
-        // Funkcja obliczająca sumaryczny pobór i zapisująca stan do LocalStorage
         function calculateEnergy() {
             let total = 0;
-            document.querySelectorAll('#device-list input:checked').forEach(checkbox => {
-                total += parseInt(checkbox.value);
+            document.querySelectorAll('#device-list input[type="checkbox"]:checked').forEach(checkbox => {
+                const quantityInput = checkbox.parentElement.querySelector('input[type="number"]');
+                total += parseInt(checkbox.value) * parseInt(quantityInput.value);
             });
             document.getElementById('total-energy').textContent = `Całkowity pobór: ${total} W`;
             localStorage.setItem('total-energy', total);
         }
 
-        // Przywrócenie wyniku po odświeżeniu
         window.onload = function() {
             const savedTotal = localStorage.getItem('total-energy');
             if (savedTotal) {
@@ -104,4 +166,3 @@
 
 </body>
 </html>
-
