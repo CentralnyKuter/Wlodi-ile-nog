@@ -5,16 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kalkulator Poboru Energii</title>
     <style>
+        /* Główne ustawienia stylów */
+        :root {
+            --background-image: url('images/2.jpg'); /* Tło strony */
+            --container-bg: rgba(30, 30, 30, 0.85); /* Tło okna głównego */
+            --button-bg: #FF9800; /* Kolor przycisków */
+            --button-hover: #E68900; /* Kolor przycisków po najechaniu */
+            --checkbox-size: 24px; /* Rozmiar checkboxów */
+            --input-width: 60px; /* Szerokość pola liczbowego */
+            --button-size: 24px; /* Rozmiar przycisków + i - */
+        }
+
         body {
             font-family: Arial, sans-serif;
-            background-color: #121212;
+            background: var(--background-image) no-repeat center center fixed;
+            background-size: cover;
             color: #ffffff;
             text-align: center;
             margin: 20px;
         }
 
         .container {
-            background: rgba(30, 30, 30, 0.85);
+            background: var(--container-bg);
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -23,7 +35,7 @@
         }
 
         .button {
-            background-color: #FF9800;
+            background-color: var(--button-bg);
             color: white;
             border: none;
             padding: 10px;
@@ -33,29 +45,36 @@
         }
 
         .button:hover {
-            background-color: #E68900;
+            background-color: var(--button-hover);
         }
 
         input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
+            width: var(--checkbox-size);
+            height: var(--checkbox-size);
             margin-right: 10px;
         }
 
         .quantity-container {
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: flex-end; /* Wyrównanie do prawej */
+            gap: 10px;
+            width: 100%;
         }
 
         .quantity-button {
             background-color: #666;
             color: white;
             border: none;
-            padding: 5px 8px;
+            padding: 5px 10px;
             cursor: pointer;
-            font-size: 18px;
+            font-size: var(--button-size);
             border-radius: 5px;
+        }
+
+        .quantity-input {
+            width: var(--input-width);
+            text-align: center;
         }
     </style>
 </head>
@@ -100,8 +119,7 @@
                     quantityInput.type = 'number';
                     quantityInput.min = 1;
                     quantityInput.value = localStorage.getItem('quantity-' + device.id) || 1;
-                    quantityInput.style.width = '50px';
-                    quantityInput.style.textAlign = 'center';
+                    quantityInput.classList.add('quantity-input');
                     quantityInput.disabled = !checkbox.checked;
                     
                     quantityInput.addEventListener('input', () => {
