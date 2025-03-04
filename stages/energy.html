@@ -142,18 +142,21 @@
 
         function populateDeviceSelection() {
             const select = document.getElementById('device-select');
-            const addButton = document.querySelector('.button[onclick="addSelectedDevice()"]');
-
             select.innerHTML = '';
+
+            if (availableDevices.length === 0) {
+                select.style.display = 'none';
+                return;
+            } else {
+                select.style.display = 'inline-block';
+            }
+
             availableDevices.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.id;
                 option.textContent = device.nazwa;
                 select.appendChild(option);
             });
-
-            select.style.display = 'inline-block';
-            addButton.style.display = 'inline-block';
         }
 
         function renderDeviceList() {
@@ -219,6 +222,20 @@
             container.appendChild(labelContainer);
             container.appendChild(quantityContainer);
             document.getElementById('device-list').appendChild(container);
+        }
+
+        function addSelectedDevice() {
+            const select = document.getElementById('device-select');
+            const selectedId = select.value;
+            const selectedDevice = availableDevices.find(d => d.id == selectedId);
+            if (!selectedDevice) return;
+
+            addDeviceToList(selectedDevice);
+            availableDevices = availableDevices.filter(d => d.id != selectedId);
+            devices.push(selectedDevice);
+            
+            populateDeviceSelection(); // Odśwież listę dostępnych urządzeń
+            calculateEnergy();
         }
 
         function calculateEnergy() {
