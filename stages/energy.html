@@ -15,6 +15,22 @@
             --button-size: 24px;
         }
 
+.quantity-input {
+    width: var(--input-width);
+    text-align: center;
+    -moz-appearance: textfield; /* Usuwa strzałki w Firefox */
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none; /* Usuwa strzałki w Chrome, Edge, Safari */
+    margin: 0;
+}
+
+
+
+
+        
         body {
             font-family: Arial, sans-serif;
             background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
@@ -72,7 +88,7 @@
             color: white;
             border: none;
             padding: 5px 10px;
-            cursor: default;
+            cursor: pointer;
             font-size: var(--button-size);
             border-radius: 5px;
         }
