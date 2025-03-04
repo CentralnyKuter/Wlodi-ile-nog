@@ -5,15 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kalkulator Poboru Energii</title>
     <style>
-        /* Główne ustawienia stylów */
         :root {
-            --background-image: 'images/2.jpg'; /* Tło strony */
-            --container-bg: rgba(30, 30, 30, 0.85); /* Tło okna głównego */
-            --button-bg: #FF9800; /* Kolor przycisków */
-            --button-hover: #E68900; /* Kolor przycisków po najechaniu */
-            --checkbox-size: 24px; /* Rozmiar checkboxów */
-            --input-width: 60px; /* Szerokość pola liczbowego */
-            --button-size: 24px; /* Rozmiar przycisków + i - */
+            --background-image: 'images/2.jpg';
+            --container-bg: rgba(30, 30, 30, 0.85);
+            --button-bg: #FF9800;
+            --button-hover: #E68900;
+            --checkbox-size: 24px;
+            --input-width: 60px;
+            --button-size: 24px;
         }
 
         body {
@@ -66,31 +65,9 @@
             width: var(--checkbox-size);
             height: var(--checkbox-size);
         }
-
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .quantity-button {
-            background-color: #666;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-size: var(--button-size);
-            border-radius: 5px;
-        }
-
-        .quantity-input {
-            width: var(--input-width);
-            text-align: center;
-        }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h2>Wybierz urządzenia</h2>
         <div id="device-list"></div>
@@ -133,10 +110,10 @@
             devices.forEach(device => {
                 const container = document.createElement('div');
                 container.classList.add('device-container');
-
+                
                 const labelContainer = document.createElement('div');
                 labelContainer.classList.add('device-label');
-
+                
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.value = device.pobor;
@@ -149,8 +126,8 @@
                 });
 
                 const label = document.createElement('label');
-                label.textContent = device.nazwa;
-
+                label.textContent = `${device.nazwa} (${device.pobor} W)`;
+                
                 labelContainer.appendChild(checkbox);
                 labelContainer.appendChild(label);
                 
@@ -158,7 +135,29 @@
                 listDiv.appendChild(container);
             });
         }
-    </script>
 
+        function addSelectedDevice() {
+            const select = document.getElementById('device-select');
+            const selectedId = select.value;
+            const selectedDevice = availableDevices.find(d => d.id == selectedId);
+            if (selectedDevice) {
+                devices.push(selectedDevice);
+                availableDevices = availableDevices.filter(d => d.id != selectedId);
+                renderDeviceList();
+                populateDeviceSelection();
+            }
+        }
+
+        function calculateEnergy() {
+            let totalPower = 0;
+            devices.forEach(device => {
+                const checkbox = document.getElementById('device-' + device.id);
+                if (checkbox && checkbox.checked) {
+                    totalPower += parseInt(device.pobor);
+                }
+            });
+            document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
+        }
+    </script>
 </body>
 </html>
