@@ -7,19 +7,19 @@
     { "id": 5, "nazwa": "Pixel Strobe", "pobor": 150 },
     { "id": 6, "nazwa": "K-20", "pobor": 2000 }, 
     { "id": 7, "nazwa": "Mythos 2", "pobor": 1800 }
-    { "id": 1, "nazwa": "Alpha Profile 1500 / 600W", "pobor": 150 },
-    { "id": 2, "nazwa": "MAC 700", "pobor": 1000 },
-    { "id": 3, "nazwa": "ACME WW2", "pobor": 2000 },
-    { "id": 4, "nazwa": "Sunstrip", "pobor": 400 },
-    { "id": 5, "nazwa": "CLF Ares", "pobor": 150 },
-    { "id": 6, "nazwa": "Portman P3", "pobor": 2000 }, 
-    { "id": 7, "nazwa": "DTS Flash 2000", "pobor": 1800 }
-    { "id": 1, "nazwa": "DTS Flash 4000", "pobor": 150 },
-    { "id": 2, "nazwa": "Starkbar", "pobor": 1000 },
-    { "id": 3, "nazwa": "Flash ART StrobeFX", "pobor": 2000 },
-    { "id": 4, "nazwa": "Rouge R1 FX", "pobor": 400 },
-    { "id": 5, "nazwa": "Alpha Beam 300", "pobor": 150 },
-    { "id": 6, "nazwa": "Haze Base", "pobor": 2000 }, 
-    { "id": 7, "nazwa": "MDG ATMe", "pobor": 1800 }
+    { "id": 8, "nazwa": "Alpha Profile 1500 / 600W", "pobor": 150 },
+    { "id": 9, "nazwa": "MAC 700", "pobor": 1000 },
+    { "id": 10, "nazwa": "ACME WW2", "pobor": 2000 },
+    { "id": 11, "nazwa": "Sunstrip", "pobor": 400 },
+    { "id": 12, "nazwa": "CLF Ares", "pobor": 150 },
+    { "id": 13, "nazwa": "Portman P3", "pobor": 2000 }, 
+    { "id": 14, "nazwa": "DTS Flash 2000", "pobor": 1800 }
+    { "id": 15, "nazwa": "DTS Flash 4000", "pobor": 150 },
+    { "id": 16, "nazwa": "Starkbar", "pobor": 1000 },
+    { "id": 17, "nazwa": "Flash ART StrobeFX", "pobor": 2000 },
+    { "id": 18, "nazwa": "Rouge R1 FX", "pobor": 400 },
+    { "id": 19, "nazwa": "Alpha Beam 300", "pobor": 150 },
+    { "id": 20, "nazwa": "Haze Base", "pobor": 2000 }, 
+    { "id": 21, "nazwa": "MDG ATMe", "pobor": 1800 }
 ]
 
