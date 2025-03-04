@@ -27,10 +27,9 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            display: inline-block;
             text-align: left;
             width: 90%;
-            max-width: 400px;
+            max-width: 450px;
             margin: auto;
         }
 
@@ -43,8 +42,8 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 1em;
-            width: 100%; /* Dostosowanie do małych ekranów */
-            max-width: 200px; /* Na większych ekranach */
+            width: 100%;
+            max-width: 250px;
         }
 
         .button:hover {
@@ -56,7 +55,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 5px 0;
-            flex-wrap: wrap; /* Aby na telefonach się nie rozjeżdżało */
+            flex-wrap: wrap;
         }
 
         .device-label {
@@ -85,12 +84,12 @@
         .quantity-input {
             width: var(--input-width);
             text-align: center;
-            -moz-appearance: textfield; /* Usuwa strzałki w Firefox */
+            -moz-appearance: textfield;
         }
 
         .quantity-input::-webkit-outer-spin-button,
         .quantity-input::-webkit-inner-spin-button {
-            -webkit-appearance: none; /* Usuwa strzałki w Chrome, Edge, Safari */
+            -webkit-appearance: none;
             margin: 0;
         }
 
@@ -100,36 +99,19 @@
                 width: 95%;
             }
 
-            .device-label {
-                font-size: 0.9em;
-            }
-
-            .quantity-input {
-                width: 40px;
-            }
-
             .button {
-                padding: 8px;
-                font-size: 0.9em;
-                width: 100%;
+                padding: 12px;
+                font-size: 1em;
                 max-width: none;
             }
 
-            .quantity-button {
-                font-size: 18px;
-                padding: 4px 8px;
+            .quantity-input {
+                width: 45px;
             }
 
             .device-container {
-                flex-direction: column; /* Dla telefonów - pionowe ułożenie */
+                flex-direction: column;
                 align-items: center;
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .container {
-                width: 50%;
-                max-width: 500px;
             }
         }
     </style>
@@ -163,21 +145,15 @@
             const addButton = document.querySelector('.button[onclick="addSelectedDevice()"]');
 
             select.innerHTML = '';
-            if (availableDevices.length === 0) {
-                select.style.display = 'none';
-                addButton.style.display = 'none';
-                return;
-            }
-
-            select.style.display = 'inline-block';
-            addButton.style.display = 'inline-block';
-
             availableDevices.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.id;
                 option.textContent = device.nazwa;
                 select.appendChild(option);
             });
+
+            select.style.display = 'inline-block';
+            addButton.style.display = 'inline-block';
         }
 
         function renderDeviceList() {
@@ -243,6 +219,18 @@
             container.appendChild(labelContainer);
             container.appendChild(quantityContainer);
             document.getElementById('device-list').appendChild(container);
+        }
+
+        function calculateEnergy() {
+            let totalPower = 0;
+            devices.forEach(device => {
+                const checkbox = document.getElementById('device-' + device.id);
+                const quantityInput = document.getElementById('quantity-' + device.id);
+                if (checkbox && checkbox.checked && quantityInput) {
+                    totalPower += parseInt(device.pobor) * parseInt(quantityInput.value);
+                }
+            });
+            document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
         }
     </script>
 </body>
