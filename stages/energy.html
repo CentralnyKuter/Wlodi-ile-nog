@@ -1,1 +1,107 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Poboru Energii</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            text-align: center;
+            margin: 20px;
+        }
+
+        .container {
+            background: rgba(30, 30, 30, 0.85);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: inline-block;
+            text-align: left;
+        }
+
+        .button {
+            background-color: #FF9800;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .button:hover {
+            background-color: #E68900;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Wybierz urządzenia</h2>
+        <div id="device-list"></div>
+        <button class="button" onclick="calculateEnergy()">Oblicz pobór prądu</button>
+        <h3 id="total-energy">Całkowity pobór: 0 W</h3>
+    </div>
+
+    <script>
+        let devices = [];
+
+        // Pobierz dane z JSON-a
+        fetch('../data/devices.json')
+            .then(response => response.json())
+            .then(data => {
+                devices = data;
+                const listDiv = document.getElementById('device-list');
+
+                // Tworzenie listy checkboxów
+                devices.forEach(device => {
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = device.pobor;
+                    checkbox.id = 'device-' + device.id;
+                    checkbox.checked = localStorage.getItem(checkbox.id) === 'true';
+                    
+                    checkbox.addEventListener('change', () => {
+                        localStorage.setItem(checkbox.id, checkbox.checked);
+                        calculateEnergy();
+                    });
+
+                    const label = document.createElement('label');
+                    label.textContent = device.nazwa;
+                    label.style.marginLeft = '10px';
+
+                    const div = document.createElement('div');
+                    div.appendChild(checkbox);
+                    div.appendChild(label);
+
+                    listDiv.appendChild(div);
+                });
+                calculateEnergy();
+            })
+            .catch(error => console.error("Błąd ładowania danych:", error));
+
+        // Funkcja obliczająca sumaryczny pobór i zapisująca stan do LocalStorage
+        function calculateEnergy() {
+            let total = 0;
+            document.querySelectorAll('#device-list input:checked').forEach(checkbox => {
+                total += parseInt(checkbox.value);
+            });
+            document.getElementById('total-energy').textContent = `Całkowity pobór: ${total} W`;
+            localStorage.setItem('total-energy', total);
+        }
+
+        // Przywrócenie wyniku po odświeżeniu
+        window.onload = function() {
+            const savedTotal = localStorage.getItem('total-energy');
+            if (savedTotal) {
+                document.getElementById('total-energy').textContent = `Całkowity pobór: ${savedTotal} W`;
+            }
+        };
+    </script>
+
+</body>
+</html>
 
