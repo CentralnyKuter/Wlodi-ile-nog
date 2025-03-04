@@ -4,10 +4,8 @@
     { "id": 2, "nazwa": "Pralka", "pobor": 1000 },
     { "id": 3, "nazwa": "Klimatyzacja", "pobor": 2000 },
     { "id": 4, "nazwa": "Komputer", "pobor": 400 },
-    { "id": 5, "nazwa": "Telewizor", "pobor": 150 }
-    { "id": 6, "nazwa": "Lodójjjka", "pobor": 150 },
-    { "id": 7, "nazwa": "Prjjjalka", "pobor": 1000 },
-    { "id": 8, "nazwa": "Klijjjmatyzacja", "pobor": 2000 },
-    { "id": 9, "nazwa": "Komjjjputer", "pobor": 400 },
-    { "id": 10, "nazwa": "Telejjjwizor", "pobor": 150 }
+    { "id": 5, "nazwa": "Telewizor", "pobor": 150 },
+    { "id": 6, "nazwa": "Czajnik elektryczny", "pobor": 2000 }, 
+    { "id": 7, "nazwa": "Suszarka do włosów", "pobor": 1800 }
 ]
+
