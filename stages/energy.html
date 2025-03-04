@@ -1,332 +1,318 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalkulator Poboru Energii</title>
-    <style>
-        :root {
-            --container-bg: rgba(30, 30, 30, 0.85);
-            --button-bg: #FF9800;
-            --button-hover: #E68900;
-            --input-width: 30px;
-            --button-size: 10px;
-        }
-
-        body {
-            font-size: 12px;
-            font-family: Arial, sans-serif;
-            background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: #ffffff;
-            text-align: center;
-            margin: 20px;
-        }
-
-        .container {
-            background: var(--container-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            text-align: left;
-            width: 90%;
-            max-width: 300px;
-            margin: auto;
-        }
-
-        .button {
-            background-color: var(--button-bg);
-            color: white;
-            border: none;
-            padding: 10px;
-            margin-top: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1em;
-            width: 50%;
-            max-width: 250px;
-        }
-
-        .button:hover {
-            background-color: var(--button-hover);
-        }
-
-        .device-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px 0;
-        }
-
-        .device-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1em;
-        }
-
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .quantity-button {
-            background-color: #666;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-size: var(--button-size);
-            border-radius: 5px;
-        }
-
-        .quantity-input {
-            width: var(--input-width);
-            text-align: center;
-            -moz-appearance: textfield;
-        }
-
-        .quantity-input::-webkit-outer-spin-button,
-        .quantity-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        @media (max-width: 200px) {
-            .container {
-                width: 95%;
-            }
-
-            .button {
-                padding: 12px;
-                font-size: 1em;
-                max-width: none;
-            }
-
-            .quantity-input {
-                width: 45px;
-            }
-
-            .device-container {
-                flex-direction: column;
-                align-items: center;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator Poboru Energii</title>
+  <style>
+    :root {
+      --container-bg: rgba(30, 30, 30, 0.85);
+      --button-bg: #FF9800;
+      --button-hover: #E68900;
+      --input-width: 30px;
+      --button-size: 10px;
+    }
+    body {
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+      background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #ffffff;
+      text-align: center;
+      margin: 20px;
+    }
+    .container {
+      background: var(--container-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      text-align: left;
+      width: 90%;
+      max-width: 300px;
+      margin: auto;
+    }
+    .button {
+      background-color: var(--button-bg);
+      color: white;
+      border: none;
+      padding: 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1em;
+      width: 50%;
+      max-width: 250px;
+    }
+    .button:hover {
+      background-color: var(--button-hover);
+    }
+    .device-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+    }
+    .device-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1em;
+    }
+    .quantity-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .quantity-button {
+      background-color: #666;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: var(--button-size);
+      border-radius: 5px;
+    }
+    .quantity-input {
+      width: var(--input-width);
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+    .quantity-input::-webkit-outer-spin-button,
+    .quantity-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    @media (max-width: 200px) {
+      .container {
+        width: 95%;
+      }
+      .button {
+        padding: 12px;
+        font-size: 1em;
+        max-width: none;
+      }
+      .quantity-input {
+        width: 45px;
+      }
+      .device-container {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Choose your weapon !</h2>
-        <div id="device-list"></div>
-        <select id="device-select"></select>
-        <button class="button" onclick="addSelectedDevice()">Dodaj urządzenie</button>
-        <button class="button" onclick="calculateEnergy()">Oblicz pobór prądu</button>
-        <!-- Nowy przycisk Clear all -->
-        <button class="button" onclick="clearAll()">Clear all</button>
-        <h3 id="total-energy">Całkowity pobór: 0 W</h3>
-    </div>
+  <div class="container">
+    <h2>Choose your weapon !</h2>
+    <div id="device-list"></div>
+    <select id="device-select"></select>
+    <button class="button" onclick="addSelectedDevice()">Dodaj urządzenie</button>
+    <!-- Przycisk 'Oblicz pobór' został usunięty -->
+    <button class="button" onclick="clearAll()">Clear all</button>
+    <h3 id="total-energy">Całkowity pobór: 0 W</h3>
+  </div>
 
-    <script>
-        let devices = [];
-        let availableDevices = [];
-        let allDevices = [];
+  <script>
+    let devices = [];
+    let availableDevices = [];
+    let allDevices = [];
 
-        // Zapis stanu do localStorage
-        function saveState() {
-            const state = {
-                devices: devices.map(device => {
-                    const quantityInput = document.getElementById('quantity-' + device.id);
-                    const checkbox = document.getElementById('device-' + device.id);
-                    return {
-                        id: device.id,
-                        quantity: quantityInput ? quantityInput.value : 1,
-                        isChecked: checkbox ? checkbox.checked : true
-                    };
-                }),
-                availableDevicesIds: availableDevices.map(device => device.id)
-            };
-            localStorage.setItem('deviceState', JSON.stringify(state));
-        }
+    // Zapis stanu do localStorage
+    function saveState() {
+      const state = {
+        devices: devices.map(device => {
+          const quantityInput = document.getElementById('quantity-' + device.id);
+          const checkbox = document.getElementById('device-' + device.id);
+          return {
+            id: device.id,
+            quantity: quantityInput ? quantityInput.value : 0,
+            isChecked: checkbox ? checkbox.checked : true
+          };
+        }),
+        availableDevicesIds: availableDevices.map(device => device.id)
+      };
+      localStorage.setItem('deviceState', JSON.stringify(state));
+    }
 
-        // Odtwarzanie stanu z localStorage
-        function restoreState() {
-            const savedState = localStorage.getItem('deviceState');
-            if (savedState) {
-                const state = JSON.parse(savedState);
-                state.devices.forEach(savedDevice => {
-                    const device = allDevices.find(d => d.id === savedDevice.id);
-                    if (device) {
-                        if (!devices.find(d => d.id === device.id)) {
-                            addDeviceToList(device);
-                            devices.push(device);
-                        }
-                        const quantityInput = document.getElementById('quantity-' + device.id);
-                        const checkbox = document.getElementById('device-' + device.id);
-                        if (quantityInput) {
-                            quantityInput.value = savedDevice.quantity;
-                        }
-                        if (checkbox) {
-                            checkbox.checked = savedDevice.isChecked;
-                        }
-                    }
-                });
-                if(state.availableDevicesIds) {
-                    availableDevices = allDevices.filter(d => state.availableDevicesIds.indexOf(d.id) !== -1);
-                }
-                populateDeviceSelection();
-                calculateEnergy();
+    // Odtwarzanie stanu z localStorage
+    function restoreState() {
+      const savedState = localStorage.getItem('deviceState');
+      if (savedState) {
+        const state = JSON.parse(savedState);
+        state.devices.forEach(savedDevice => {
+          const device = allDevices.find(d => d.id === savedDevice.id);
+          if (device) {
+            if (!devices.find(d => d.id === device.id)) {
+              addDeviceToList(device);
+              devices.push(device);
             }
-        }
-
-        function populateDeviceSelection() {
-            const select = document.getElementById('device-select');
-            select.innerHTML = '';
-
-            if (availableDevices.length === 0) {
-                select.style.display = 'none';
-                return;
-            } else {
-                select.style.display = 'inline-block';
+            const quantityInput = document.getElementById('quantity-' + device.id);
+            const checkbox = document.getElementById('device-' + device.id);
+            if (quantityInput) {
+              quantityInput.value = savedDevice.quantity;
             }
-
-            availableDevices.forEach(device => {
-                const option = document.createElement('option');
-                option.value = device.id;
-                option.textContent = device.nazwa;
-                select.appendChild(option);
-            });
-        }
-
-        function renderDeviceList() {
-            const listDiv = document.getElementById('device-list');
-            listDiv.innerHTML = '';
-            devices.forEach(device => addDeviceToList(device));
-        }
-
-        function addDeviceToList(device) {
-            const container = document.createElement('div');
-            container.classList.add('device-container');
-
-            const labelContainer = document.createElement('div');
-            labelContainer.classList.add('device-label');
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = device.pobor;
-            checkbox.id = 'device-' + device.id;
-            checkbox.checked = true;
-            checkbox.addEventListener('change', () => {
-                calculateEnergy();
-                saveState();
-            });
-
-            const label = document.createElement('label');
-            label.textContent = `${device.nazwa} (${device.pobor} W)`;
-
-            const quantityContainer = document.createElement('div');
-            quantityContainer.classList.add('quantity-controls');
-
-            const minusButton = document.createElement('button');
-            minusButton.textContent = "−";
-            minusButton.classList.add('quantity-button');
-            minusButton.onclick = function () {
-                let input = document.getElementById('quantity-' + device.id);
-                if (input.value > 1) {
-                    input.value--;
-                    calculateEnergy();
-                    saveState();
-                }
-            };
-
-            const quantityInput = document.createElement('input');
-            quantityInput.type = 'number';
-            quantityInput.value = 1;
-            quantityInput.min = 1;
-            quantityInput.id = 'quantity-' + device.id;
-            quantityInput.classList.add('quantity-input');
-            quantityInput.oninput = function () {
-                calculateEnergy();
-                saveState();
-            };
-
-            const plusButton = document.createElement('button');
-            plusButton.textContent = "+";
-            plusButton.classList.add('quantity-button');
-            plusButton.onclick = function () {
-                let input = document.getElementById('quantity-' + device.id);
-                input.value++;
-                calculateEnergy();
-                saveState();
-            };
-
-            labelContainer.appendChild(checkbox);
-            labelContainer.appendChild(label);
-            quantityContainer.appendChild(minusButton);
-            quantityContainer.appendChild(quantityInput);
-            quantityContainer.appendChild(plusButton);
-
-            container.appendChild(labelContainer);
-            container.appendChild(quantityContainer);
-            document.getElementById('device-list').appendChild(container);
-        }
-
-        function addSelectedDevice() {
-            const select = document.getElementById('device-select');
-            const selectedId = select.value;
-            const selectedDevice = availableDevices.find(d => d.id == selectedId);
-            if (!selectedDevice) return;
-
-            addDeviceToList(selectedDevice);
-            availableDevices = availableDevices.filter(d => d.id != selectedId);
-            devices.push(selectedDevice);
-            
-            populateDeviceSelection();
-            calculateEnergy();
-            saveState();
-        }
-
-        function calculateEnergy() {
-            let totalPower = 0;
-            devices.forEach(device => {
-                const checkbox = document.getElementById('device-' + device.id);
-                const quantityInput = document.getElementById('quantity-' + device.id);
-                if (checkbox && checkbox.checked && quantityInput) {
-                    totalPower += parseInt(device.pobor) * parseInt(quantityInput.value);
-                }
-            });
-            document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
-        }
-
-        // Funkcja czyszcząca stan aplikacji i localStorage
-        function clearAll() {
-            localStorage.removeItem('deviceState');
-            if (allDevices.length > 0) {
-                // Ustawienie stanu początkowego: pierwsze 5 urządzeń i reszta jako dostępne
-                devices = allDevices.slice(0, 5);
-                availableDevices = allDevices.slice(5);
-            } else {
-                devices = [];
-                availableDevices = [];
+            if (checkbox) {
+              checkbox.checked = savedDevice.isChecked;
             }
-            renderDeviceList();
-            populateDeviceSelection();
-            calculateEnergy();
+          }
+        });
+        if(state.availableDevicesIds) {
+          availableDevices = allDevices.filter(d => state.availableDevicesIds.indexOf(d.id) !== -1);
         }
+        populateDeviceSelection();
+        calculateEnergy();
+      }
+    }
 
-        window.onload = function() {
-            fetch('/Wlodi-ile-nog/data/devices.json')
-                .then(response => response.json())
-                .then(data => {
-                    allDevices = data;
-                    devices = data.slice(0, 5);
-                    availableDevices = data.slice(5);
-                    renderDeviceList();
-                    populateDeviceSelection();
-                    restoreState();
-                })
-                .catch(error => console.error("Błąd ładowania danych:", error));
-        };
-    </script>
+    function populateDeviceSelection() {
+      const select = document.getElementById('device-select');
+      select.innerHTML = '';
+
+      if (availableDevices.length === 0) {
+        select.style.display = 'none';
+        return;
+      } else {
+        select.style.display = 'inline-block';
+      }
+
+      availableDevices.forEach(device => {
+        const option = document.createElement('option');
+        option.value = device.id;
+        option.textContent = device.nazwa;
+        select.appendChild(option);
+      });
+    }
+
+    function renderDeviceList() {
+      const listDiv = document.getElementById('device-list');
+      listDiv.innerHTML = '';
+      devices.forEach(device => addDeviceToList(device));
+    }
+
+    function addDeviceToList(device) {
+      const container = document.createElement('div');
+      container.classList.add('device-container');
+
+      const labelContainer = document.createElement('div');
+      labelContainer.classList.add('device-label');
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = device.pobor;
+      checkbox.id = 'device-' + device.id;
+      checkbox.checked = true;
+      checkbox.addEventListener('change', () => {
+        calculateEnergy();
+        saveState();
+      });
+
+      const label = document.createElement('label');
+      label.textContent = `${device.nazwa} (${device.pobor} W)`;
+
+      const quantityContainer = document.createElement('div');
+      quantityContainer.classList.add('quantity-controls');
+
+      const minusButton = document.createElement('button');
+      minusButton.textContent = "−";
+      minusButton.classList.add('quantity-button');
+      minusButton.onclick = function () {
+        let input = document.getElementById('quantity-' + device.id);
+        if (input.value > 0) {
+          input.value--;
+          calculateEnergy();
+          saveState();
+        }
+      };
+
+      const quantityInput = document.createElement('input');
+      quantityInput.type = 'number';
+      // Domyślna wartość ustawiona na 0
+      quantityInput.value = 0;
+      quantityInput.min = 0;
+      quantityInput.id = 'quantity-' + device.id;
+      quantityInput.classList.add('quantity-input');
+      quantityInput.oninput = function () {
+        calculateEnergy();
+        saveState();
+      };
+
+      const plusButton = document.createElement('button');
+      plusButton.textContent = "+";
+      plusButton.classList.add('quantity-button');
+      plusButton.onclick = function () {
+        let input = document.getElementById('quantity-' + device.id);
+        input.value++;
+        calculateEnergy();
+        saveState();
+      };
+
+      labelContainer.appendChild(checkbox);
+      labelContainer.appendChild(label);
+      quantityContainer.appendChild(minusButton);
+      quantityContainer.appendChild(quantityInput);
+      quantityContainer.appendChild(plusButton);
+
+      container.appendChild(labelContainer);
+      container.appendChild(quantityContainer);
+      document.getElementById('device-list').appendChild(container);
+    }
+
+    function addSelectedDevice() {
+      const select = document.getElementById('device-select');
+      const selectedId = select.value;
+      const selectedDevice = availableDevices.find(d => d.id == selectedId);
+      if (!selectedDevice) return;
+
+      addDeviceToList(selectedDevice);
+      availableDevices = availableDevices.filter(d => d.id != selectedId);
+      devices.push(selectedDevice);
+      
+      populateDeviceSelection();
+      calculateEnergy();
+      saveState();
+    }
+
+    // Funkcja wyliczająca pobór energii w czasie rzeczywistym
+    function calculateEnergy() {
+      let totalPower = 0;
+      devices.forEach(device => {
+        const checkbox = document.getElementById('device-' + device.id);
+        const quantityInput = document.getElementById('quantity-' + device.id);
+        if (checkbox && checkbox.checked && quantityInput) {
+          totalPower += parseInt(device.pobor) * parseInt(quantityInput.value);
+        }
+      });
+      document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
+    }
+
+    // Funkcja czyszcząca stan aplikacji i localStorage
+    function clearAll() {
+      localStorage.removeItem('deviceState');
+      if (allDevices.length > 0) {
+        devices = allDevices.slice(0, 5);
+        availableDevices = allDevices.slice(5);
+      } else {
+        devices = [];
+        availableDevices = [];
+      }
+      renderDeviceList();
+      populateDeviceSelection();
+      calculateEnergy();
+    }
+
+    window.onload = function() {
+      fetch('/Wlodi-ile-nog/data/devices.json')
+        .then(response => response.json())
+        .then(data => {
+          allDevices = data;
+          devices = data.slice(0, 5);
+          availableDevices = data.slice(5);
+          renderDeviceList();
+          populateDeviceSelection();
+          restoreState();
+        })
+        .catch(error => console.error("Błąd ładowania danych:", error));
+    };
+  </script>
 </body>
 </html>
