@@ -115,6 +115,17 @@
             })
             .catch(error => console.error("Błąd ładowania danych:", error));
 
+        function populateDeviceSelection() {
+            const select = document.getElementById('device-select');
+            select.innerHTML = '';
+            availableDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.id;
+                option.textContent = device.nazwa;
+                select.appendChild(option);
+            });
+        }
+
         function renderDeviceList() {
             const listDiv = document.getElementById('device-list');
             listDiv.innerHTML = '';
@@ -143,53 +154,8 @@
                 labelContainer.appendChild(checkbox);
                 labelContainer.appendChild(label);
                 
-                const quantityContainer = document.createElement('div');
-                quantityContainer.classList.add('quantity-controls');
-
-                const quantityInput = document.createElement('input');
-                quantityInput.type = 'number';
-                quantityInput.min = 1;
-                quantityInput.value = localStorage.getItem('quantity-' + device.id) || 1;
-                quantityInput.classList.add('quantity-input');
-                
-                const minusButton = document.createElement('button');
-                minusButton.textContent = '-';
-                minusButton.classList.add('quantity-button');
-                minusButton.onclick = () => {
-                    if (quantityInput.value > 1) {
-                        quantityInput.value = parseInt(quantityInput.value) - 1;
-                        localStorage.setItem('quantity-' + device.id, quantityInput.value);
-                        calculateEnergy();
-                    }
-                };
-                
-                const plusButton = document.createElement('button');
-                plusButton.textContent = '+';
-                plusButton.classList.add('quantity-button');
-                plusButton.onclick = () => {
-                    quantityInput.value = parseInt(quantityInput.value) + 1;
-                    localStorage.setItem('quantity-' + device.id, quantityInput.value);
-                    calculateEnergy();
-                };
-                
-                quantityContainer.appendChild(minusButton);
-                quantityContainer.appendChild(quantityInput);
-                quantityContainer.appendChild(plusButton);
-                
                 container.appendChild(labelContainer);
-                container.appendChild(quantityContainer);
                 listDiv.appendChild(container);
-            });
-        }
-
-        function populateDeviceSelection() {
-            const select = document.getElementById('device-select');
-            select.innerHTML = '';
-            availableDevices.forEach(device => {
-                const option = document.createElement('option');
-                option.value = device.id;
-                option.textContent = device.nazwa;
-                select.appendChild(option);
             });
         }
     </script>
