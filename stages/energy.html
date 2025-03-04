@@ -6,20 +6,20 @@
     <title>Kalkulator Poboru Energii</title>
     <style>
         :root {
-            --background-image: 'images/2.jpg'; /* Ścieżka do obrazu tła */
-            --container-bg: rgba(30, 30, 30, 0.85); /* Kolor tła okna głównego (półprzezroczyste ciemne tło) */
-            --button-bg: rgb(255, 152, 0); /* Kolor przycisków w formacie RGB (pomarańczowy) */
-            --button-hover: rgb(230, 137, 0); /* Kolor przycisków po najechaniu */
-            --checkbox-size: 24px; /* Rozmiar checkboxów */
-            --input-width: 60px; /* Szerokość pól liczbowych (ilości urządzeń) */
-            --button-size: 24px; /* Rozmiar tekstu na przyciskach */
+            --background-image: 'images/2.jpg';
+            --container-bg: rgba(30, 30, 30, 0.85);
+            --button-bg: #FF9800;
+            --button-hover: #E68900;
+            --checkbox-size: 24px;
+            --input-width: 60px;
+            --button-size: 24px;
         }
 
         body {
-            font-family: Arial, sans-serif; /* Czcionka używana na stronie */
+            font-family: Arial, sans-serif;
             background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
             background-size: cover;
-            color: rgb(255, 255, 255); /* Kolor tekstu (biały) */
+            color: #ffffff;
             text-align: center;
             margin: 20px;
         }
@@ -27,8 +27,8 @@
         .container {
             background: var(--container-bg);
             padding: 20px;
-            border-radius: 12px; /* Zaokrąglenie rogów kontenera */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Cień dla kontenera */
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             display: inline-block;
             text-align: left;
             width: 400px;
@@ -36,7 +36,7 @@
 
         .button {
             background-color: var(--button-bg);
-            color: rgb(255, 255, 255); /* Kolor tekstu na przyciskach (biały) */
+            color: white;
             border: none;
             padding: 10px;
             margin-top: 10px;
@@ -45,7 +45,7 @@
         }
 
         .button:hover {
-            background-color: var(--button-hover); /* Kolor zmienia się po najechaniu */
+            background-color: var(--button-hover);
         }
 
         .device-container {
@@ -68,8 +68,8 @@
         }
 
         .quantity-button {
-            background-color: rgb(102, 102, 102); /* Kolor przycisków + i - (ciemnoszary) */
-            color: rgb(255, 255, 255); /* Kolor tekstu na przyciskach (biały) */
+            background-color: #666;
+            color: white;
             border: none;
             padding: 5px 10px;
             cursor: pointer;
@@ -92,5 +92,121 @@
         <button class="button" onclick="calculateEnergy()">Oblicz pobór prądu</button>
         <h3 id="total-energy">Całkowity pobór: 0 W</h3>
     </div>
+
+    <script>
+        let devices = [];
+        let availableDevices = [];
+        
+        fetch('/Wlodi-ile-nog/data/devices.json')
+            .then(response => response.json())
+            .then(data => {
+                devices = data.slice(0, 5); // Domyślnie 5 pierwszych urządzeń
+                availableDevices = data.slice(5); // Reszta do dodania
+                renderDeviceList();
+                populateDeviceSelection();
+            })
+            .catch(error => console.error("Błąd ładowania danych:", error));
+
+        function populateDeviceSelection() {
+            const select = document.getElementById('device-select');
+            select.innerHTML = '';
+            availableDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.id;
+                option.textContent = device.nazwa;
+                select.appendChild(option);
+            });
+        }
+
+        function renderDeviceList() {
+            const listDiv = document.getElementById('device-list');
+            listDiv.innerHTML = '';
+            devices.forEach(device => addDeviceToList(device));
+        }
+
+        function addDeviceToList(device) {
+            const container = document.createElement('div');
+            container.classList.add('device-container');
+
+            const labelContainer = document.createElement('div');
+            labelContainer.classList.add('device-label');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = device.pobor;
+            checkbox.id = 'device-' + device.id;
+            checkbox.checked = true;
+            checkbox.addEventListener('change', calculateEnergy);
+
+            const label = document.createElement('label');
+            label.textContent = `${device.nazwa} (${device.pobor} W)`;
+
+            const quantityContainer = document.createElement('div');
+            quantityContainer.classList.add('quantity-controls');
+
+            const minusButton = document.createElement('button');
+            minusButton.textContent = "−";
+            minusButton.classList.add('quantity-button');
+            minusButton.onclick = function () {
+                let input = document.getElementById('quantity-' + device.id);
+                if (input.value > 1) {
+                    input.value--;
+                    calculateEnergy();
+                }
+            };
+
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'number';
+            quantityInput.value = 1;
+            quantityInput.min = 1;
+            quantityInput.id = 'quantity-' + device.id;
+            quantityInput.classList.add('quantity-input');
+            quantityInput.oninput = calculateEnergy;
+
+            const plusButton = document.createElement('button');
+            plusButton.textContent = "+";
+            plusButton.classList.add('quantity-button');
+            plusButton.onclick = function () {
+                let input = document.getElementById('quantity-' + device.id);
+                input.value++;
+                calculateEnergy();
+            };
+
+            labelContainer.appendChild(checkbox);
+            labelContainer.appendChild(label);
+            quantityContainer.appendChild(minusButton);
+            quantityContainer.appendChild(quantityInput);
+            quantityContainer.appendChild(plusButton);
+
+            container.appendChild(labelContainer);
+            container.appendChild(quantityContainer);
+            document.getElementById('device-list').appendChild(container);
+        }
+
+        function addSelectedDevice() {
+            const select = document.getElementById('device-select');
+            const selectedId = select.value;
+            const selectedDevice = availableDevices.find(d => d.id == selectedId);
+            if (!selectedDevice) return;
+            
+            addDeviceToList(selectedDevice);
+            availableDevices = availableDevices.filter(d => d.id != selectedId);
+            select.remove(select.selectedIndex);
+            devices.push(selectedDevice);
+            calculateEnergy();
+        }
+
+        function calculateEnergy() {
+            let totalPower = 0;
+            devices.forEach(device => {
+                const checkbox = document.getElementById('device-' + device.id);
+                const quantityInput = document.getElementById('quantity-' + device.id);
+                if (checkbox && checkbox.checked && quantityInput) {
+                    totalPower += parseInt(device.pobor) * parseInt(quantityInput.value);
+                }
+            });
+            document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
+        }
+    </script>
 </body>
 </html>
