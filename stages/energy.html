@@ -122,6 +122,8 @@
         <select id="device-select"></select>
         <button class="button" onclick="addSelectedDevice()">Dodaj urządzenie</button>
         <button class="button" onclick="calculateEnergy()">Oblicz pobór prądu</button>
+        <!-- Nowy przycisk Clear all -->
+        <button class="button" onclick="clearAll()">Clear all</button>
         <h3 id="total-energy">Całkowity pobór: 0 W</h3>
     </div>
 
@@ -152,17 +154,13 @@
             const savedState = localStorage.getItem('deviceState');
             if (savedState) {
                 const state = JSON.parse(savedState);
-                // Przywracamy urządzenia, które wcześniej były na liście
                 state.devices.forEach(savedDevice => {
-                    // Szukamy urządzenia w pełnej liście
                     const device = allDevices.find(d => d.id === savedDevice.id);
                     if (device) {
-                        // Jeśli urządzenie nie jest już dodane, dodajemy je
                         if (!devices.find(d => d.id === device.id)) {
                             addDeviceToList(device);
                             devices.push(device);
                         }
-                        // Ustawiamy wartość ilości oraz stan checkboxa
                         const quantityInput = document.getElementById('quantity-' + device.id);
                         const checkbox = document.getElementById('device-' + device.id);
                         if (quantityInput) {
@@ -173,7 +171,6 @@
                         }
                     }
                 });
-                // Przywracamy listę dostępnych urządzeń
                 if(state.availableDevicesIds) {
                     availableDevices = allDevices.filter(d => state.availableDevicesIds.indexOf(d.id) !== -1);
                 }
@@ -284,7 +281,7 @@
             availableDevices = availableDevices.filter(d => d.id != selectedId);
             devices.push(selectedDevice);
             
-            populateDeviceSelection(); // Odśwież listę dostępnych urządzeń
+            populateDeviceSelection();
             calculateEnergy();
             saveState();
         }
@@ -301,12 +298,27 @@
             document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
         }
 
+        // Funkcja czyszcząca stan aplikacji i localStorage
+        function clearAll() {
+            localStorage.removeItem('deviceState');
+            if (allDevices.length > 0) {
+                // Ustawienie stanu początkowego: pierwsze 5 urządzeń i reszta jako dostępne
+                devices = allDevices.slice(0, 5);
+                availableDevices = allDevices.slice(5);
+            } else {
+                devices = [];
+                availableDevices = [];
+            }
+            renderDeviceList();
+            populateDeviceSelection();
+            calculateEnergy();
+        }
+
         window.onload = function() {
             fetch('/Wlodi-ile-nog/data/devices.json')
                 .then(response => response.json())
                 .then(data => {
                     allDevices = data;
-                    // Inicjalnie przyjmujemy, że pierwsze 5 urządzeń jest dodanych
                     devices = data.slice(0, 5);
                     availableDevices = data.slice(5);
                     renderDeviceList();
