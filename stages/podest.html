@@ -2,24 +2,103 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Wizualizacja sceny z panelami (osobne nogi dla głównej i uzupełnień) – DARK THEME</title>
+  <title>Wizualizacja sceny z panelami – DARK THEME</title>
   <style>
-    /* Tło całej strony: ciemne */
+    :root {
+      --container-bg: rgba(30, 30, 30, 0.85);
+      --button-bg: #FF9800;
+      --button-hover: #E68900;
+      --input-width: 30px;
+      --button-size: 12px;
+    }
+    /* Tło strony: obrazek 2.jpg */
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
-      background-color: #121212;
+      background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
+      background-size: cover;
       color: #FFFFFF;
     }
-
-    /* Kontener sceny – rozmiar wg wprowadzonych wymiarów (1 m = 50px) */
+    /* Kontener formularza – półprzezroczyste okienko */
+    .container {
+      background: var(--container-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      max-width: 350px;
+      margin: auto;
+      text-align: left;
+    }
+    /* Kontener widoku sceny – półprzezroczysty, dopasowujący się do zawartości */
+    .stage-container {
+      background: var(--container-bg);
+      padding: 10px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      display: block;
+      margin: 20px auto;
+      width: fit-content;
+    }
+    /* Każdy wiersz formularza ustawiony w jednej linii */
+    .form-row {
+      white-space: nowrap;
+      margin-bottom: 10px;
+    }
+    /* Etykiety oraz kontrolki jako elementy inline-block */
+    .form-row label,
+    .form-row .quantity-controls {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    /* Kontrolki przycisków i inputa – zachowujemy flex, bo działa poprawnie */
+    .quantity-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .quantity-button {
+      background-color: #666;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: var(--button-size);
+      border-radius: 5px;
+    }
+    .quantity-button:hover {
+      background-color: var(--button-hover);
+    }
+    .quantity-input {
+      width: var(--input-width);
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+    .quantity-input::-webkit-outer-spin-button,
+    .quantity-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    form input[type="radio"] {
+      margin-left: 15px;
+    }
+    form button {
+      margin-top: 10px;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+      background-color: var(--button-bg);
+      color: #FFFFFF;
+      font-weight: bold;
+    }
+    form button:hover {
+      background-color: var(--button-hover);
+    }
+    /* Kontener sceny – będzie miał rozmiar ustawiony dynamicznie przez skrypt */
     #stage {
       position: relative;
-      margin-top: 20px;
       background-color: #1E1E1E;
       border: 1px solid #444444;
     }
-
     .panel {
       position: absolute;
       border: 1px solid white;
@@ -30,239 +109,169 @@
       color: #FFFFFF;
       box-sizing: border-box;
     }
-
-    /* Panele główne */
     .primary {
       background-color: #4CAF50;
     }
-    /* Panele uzupełniające (obrócone o 90°) */
     .rotated {
       background-color: #FF5722;
     }
-    /* Panele 1×1 */
     .small {
       background-color: #3F51B5;
     }
-
-    /* Wygląd nóg */
     .leg {
       position: absolute;
       width: 8px;
       height: 8px;
       border-radius: 50%;
-	border: 1px solid white;
+      border: 1px solid white;
       background-color: grey;
       pointer-events: none;
-
     }
-
-    /* Formy i etykiety w ciemnym stylu */
-    form label {
-      display: block;
-      margin-bottom: 10px;
-      color: #FFFFFF;
-    }
-
-    form input[type="number"] {
-      background-color: #2A2A2A;
-      color: #FFFFFF;
-      border: 1px solid #555555;
-      margin-left: 5px;
-      width: 60px;
-    }
-
-    form input[type="radio"] {
-      margin-left: 15px;
-    }
-
-    form button {
-      margin-top: 10px;
-      padding: 6px 12px;
-      border: none;
-      cursor: pointer;
-      background-color: #0066CC;
-      color: #FFFFFF;
-      font-weight: bold;
-    }
-
-    form button:hover {
-      background-color: #005BB5;
-    }
-
-    /* Sekcja podsumowania */
-    #summary {
+    /* Nowe podsumowanie – umieszczone w kontenerze formularza */
+    #dataSummary {
       margin-top: 20px;
-      font-weight: ;
-      white-space: pre;
-      color: #FFFFFF;
+      padding: 10px;
+      background-color: #FFFFFF;
+      color: #000000;
+      border-radius: 8px;
+      font-weight: bold;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h2>Włodi, ile nóg?</h2>
-  <form id="stageForm">
-    <label>
-      Szerokość sceny (m): 
-      <input type="number" id="sceneWidth" min="1" value="9">
-    </label>
-    <label>
-      Wysokość sceny (m): 
-      <input type="number" id="sceneHeight" min="1" value="7">
-    </label>
-    <label>
-      Orientacja paneli:
-    </label>
-    <label>
-      <input type="radio" name="orientation" value="wzdluż" checked> Normalnie
-    </label>
-    <label>
-      <input type="radio" name="orientation" value="wpoprzek"> Jak lewus
-    </label>
-    <button type="button" onclick="drawStage()">Generuj podest</button>
-  </form>
+  <!-- Kontener formularza oraz podsumowania -->
+  <div class="container">
+    <h2>Włodi, ile nóg?</h2>
+    <form id="stageForm">
+      <div class="form-row">
+        <label for="sceneWidth">Szerokość sceny (m):</label>
+        <span class="quantity-controls">
+          <button type="button" class="quantity-button" onclick="decrement('sceneWidth');">−</button>
+          <input type="number" id="sceneWidth" min="1" value="9" class="quantity-input">
+          <button type="button" class="quantity-button" onclick="increment('sceneWidth');">+</button>
+        </span>
+      </div>
+      <div class="form-row">
+        <label for="sceneHeight">Wysokość sceny (m):</label>
+        <span class="quantity-controls">
+          <button type="button" class="quantity-button" onclick="decrement('sceneHeight');">−</button>
+          <input type="number" id="sceneHeight" min="1" value="7" class="quantity-input">
+          <button type="button" class="quantity-button" onclick="increment('sceneHeight');">+</button>
+        </span>
+      </div>
+      <div class="form-row">
+        <label>Orientacja paneli:</label>
+        <label>
+          <input type="radio" name="orientation" value="wzdluż" checked> Normalnie
+        </label>
+        <label>
+          <input type="radio" name="orientation" value="wpoprzek"> Jak lewus
+        </label>
+      </div>
+      <button type="button" onclick="drawStage()">Generuj podest</button>
+    </form>
+    <!-- Podsumowanie danych (umieszczone w tym samym kontenerze) -->
+    <div id="dataSummary">
+      Liczba podestów: 0<br>
+      Liczba nóg: 0
+    </div>
+  </div>
 
-  <div id="stage"></div>
-  <div id="summary"></div>
+  <!-- Kontener widoku sceny opakowany w półprzezroczysty div -->
+  <div class="stage-container">
+    <div id="stage"></div>
+  </div>
 
   <script>
-    // Define drawStage in the global scope
+    // Funkcje do zwiększania/zmniejszania wartości pól
+    function increment(fieldId) {
+      const input = document.getElementById(fieldId);
+      input.value = parseInt(input.value) + 1;
+    }
+    function decrement(fieldId) {
+      const input = document.getElementById(fieldId);
+      if (parseInt(input.value) > parseInt(input.min)) {
+        input.value = parseInt(input.value) - 1;
+      }
+    }
+
+    // Funkcja rysująca scenę
     window.drawStage = function drawStage() {
-      // Pobranie wymiarów sceny oraz orientacji
+      console.log('Funkcja drawStage() została wywołana');
       const sceneWidth = parseInt(document.getElementById('sceneWidth').value);
       const sceneHeight = parseInt(document.getElementById('sceneHeight').value);
       const orientation = document.querySelector('input[name="orientation"]:checked').value;
+      const scale = 50; // 1 m = 50px
 
-      // Skala: 1 m = 50 px
-      const scale = 50;
-
-      // Czyścimy zawartość sceny
       const stageDiv = document.getElementById('stage');
       stageDiv.innerHTML = '';
       stageDiv.style.width = (sceneWidth * scale) + 'px';
       stageDiv.style.height = (sceneHeight * scale) + 'px';
 
-      // Określamy wymiary paneli głównych oraz obróconych
       let primaryPanelWidth, primaryPanelHeight;
       let rotatedPanelWidth, rotatedPanelHeight;
       let primaryCols, primaryRows;
 
       if (orientation === 'wzdluż') {
-        // Główne panele: 2×1 m
         primaryPanelWidth = 2;
         primaryPanelHeight = 1;
-        // Uzupełniające (obrócone o 90°): 1×2 m
         rotatedPanelWidth = 1;
         rotatedPanelHeight = 2;
-        
         primaryCols = Math.floor(sceneWidth / primaryPanelWidth);
         primaryRows = Math.floor(sceneHeight / primaryPanelHeight);
       } else {
-        // Główne panele: 1×2 m
         primaryPanelWidth = 1;
         primaryPanelHeight = 2;
-        // Uzupełniające: 2×1 m
         rotatedPanelWidth = 2;
         rotatedPanelHeight = 1;
-        
         primaryCols = Math.floor(sceneWidth / primaryPanelWidth);
         primaryRows = Math.floor(sceneHeight / primaryPanelHeight);
       }
 
-      // Dwa zbiory na rogi: 
-      // 1) dla głównej sceny, 2) dla paneli dobudowanych
       const usedCornersMain = new Set();
       const usedCornersAddons = new Set();
 
-      /**
-       * Dodaje "nogę" w logicznym rogu (cornerX, cornerY) na głównej scenie.
-       * cornerType: 'topLeft','topRight','bottomLeft','bottomRight'
-       */
       function addLegMain(cornerX, cornerY, cornerType) {
         const key = `${cornerX},${cornerY}`;
-        if (usedCornersMain.has(key)) {
-          return;
-        }
+        if (usedCornersMain.has(key)) return;
         usedCornersMain.add(key);
-
         const leg = document.createElement('div');
         leg.classList.add('leg');
-
         let legX = cornerX * scale;
         let legY = cornerY * scale;
-
-        // Przesunięcie nogi do wewnątrz (px)
         const offset = 8;
-
         switch (cornerType) {
-          case 'topLeft':
-            legX += offset;
-            legY += offset;
-            break;
-          case 'topRight':
-            legX -= offset;
-            legY += offset;
-            break;
-          case 'bottomLeft':
-            legX += offset;
-            legY -= offset;
-            break;
-          case 'bottomRight':
-            legX -= offset;
-            legY -= offset;
-            break;
+          case 'topLeft':   legX += offset; legY += offset; break;
+          case 'topRight':  legX -= offset; legY += offset; break;
+          case 'bottomLeft':legX += offset; legY -= offset; break;
+          case 'bottomRight':legX -= offset; legY -= offset; break;
         }
-
         leg.style.left = (legX - 4) + 'px';
         leg.style.top = (legY - 4) + 'px';
         stageDiv.appendChild(leg);
       }
 
-      /**
-       * Dodaje "nogę" w logicznym rogu (cornerX, cornerY) w dobudowanej scenie.
-       */
       function addLegAddon(cornerX, cornerY, cornerType) {
         const key = `${cornerX},${cornerY}`;
-        if (usedCornersAddons.has(key)) {
-          return;
-        }
+        if (usedCornersAddons.has(key)) return;
         usedCornersAddons.add(key);
-
         const leg = document.createElement('div');
         leg.classList.add('leg');
-
         let legX = cornerX * scale;
         let legY = cornerY * scale;
-
-        // To samo przesunięcie
         const offset = 8;
-
         switch (cornerType) {
-          case 'topLeft':
-            legX += offset;
-            legY += offset;
-            break;
-          case 'topRight':
-            legX -= offset;
-            legY += offset;
-            break;
-          case 'bottomLeft':
-            legX += offset;
-            legY -= offset;
-            break;
-          case 'bottomRight':
-            legX -= offset;
-            legY -= offset;
-            break;
+          case 'topLeft':   legX += offset; legY += offset; break;
+          case 'topRight':  legX -= offset; legY += offset; break;
+          case 'bottomLeft':legX += offset; legY -= offset; break;
+          case 'bottomRight':legX -= offset; legY -= offset; break;
         }
-
-        leg.style.left = (legX - 4) + 'px'; 
+        leg.style.left = (legX - 4) + 'px';
         leg.style.top = (legY - 4) + 'px';
         stageDiv.appendChild(leg);
       }
 
-      /**
-       * Rysuje panel na głównej scenie + dodaje 4 nogi.
-       */
       function drawPanelMain(x, y, w, h, panelClass) {
         const panel = document.createElement('div');
         panel.classList.add('panel', panelClass);
@@ -272,16 +281,12 @@
         panel.style.top = (y * scale) + 'px';
         panel.textContent = `${w}×${h} m`;
         stageDiv.appendChild(panel);
-
-        addLegMain(x,       y,       'topLeft');
-        addLegMain(x + w,   y,       'topRight');
-        addLegMain(x,       y + h,   'bottomLeft');
-        addLegMain(x + w,   y + h,   'bottomRight');
+        addLegMain(x, y, 'topLeft');
+        addLegMain(x + w, y, 'topRight');
+        addLegMain(x, y + h, 'bottomLeft');
+        addLegMain(x + w, y + h, 'bottomRight');
       }
 
-      /**
-       * Rysuje panel w dobudowanej części + dodaje 4 nogi.
-       */
       function drawPanelAddon(x, y, w, h, panelClass) {
         const panel = document.createElement('div');
         panel.classList.add('panel', panelClass);
@@ -291,14 +296,12 @@
         panel.style.top = (y * scale) + 'px';
         panel.textContent = `${w}×${h} m`;
         stageDiv.appendChild(panel);
-
-        addLegAddon(x,       y,       'topLeft');
-        addLegAddon(x + w,   y,       'topRight');
-        addLegAddon(x,       y + h,   'bottomLeft');
-        addLegAddon(x + w,   y + h,   'bottomRight');
+        addLegAddon(x, y, 'topLeft');
+        addLegAddon(x + w, y, 'topRight');
+        addLegAddon(x, y + h, 'bottomLeft');
+        addLegAddon(x + w, y + h, 'bottomRight');
       }
 
-      // --- Rysowanie głównych paneli ---
       let primaryCount = 0;
       for (let r = 0; r < primaryRows; r++) {
         for (let c = 0; c < primaryCols; c++) {
@@ -309,21 +312,17 @@
         }
       }
 
-      // Obliczamy, ile miejsca (w metrach) zostało poza głównymi panelami
       const usedWidth = primaryCols * primaryPanelWidth;
       const usedHeight = primaryRows * primaryPanelHeight;
       const leftoverWidth = sceneWidth - usedWidth;
       const leftoverHeight = sceneHeight - usedHeight;
-
       let rotatedCount = 0;
 
-      // --- Uzupełnienie prawego pasa (dla "wzdłuż") ---
       if (orientation === 'wzdluż' && leftoverWidth > 0) {
         const rightAvailableWidth = leftoverWidth;
         const rightAvailableHeight = usedHeight;
         const rightCols = Math.floor(rightAvailableWidth / rotatedPanelWidth);
         const rightRows = Math.floor(rightAvailableHeight / rotatedPanelHeight);
-        
         for (let r = 0; r < rightRows; r++) {
           for (let c = 0; c < rightCols; c++) {
             const panelX = usedWidth + c * rotatedPanelWidth;
@@ -332,8 +331,6 @@
             rotatedCount++;
           }
         }
-
-        // Luka w prawym dolnym rogu
         const gapHeight = rightAvailableHeight - rightRows * rotatedPanelHeight;
         if (gapHeight > 0) {
           const gapCols = rightAvailableWidth;
@@ -347,26 +344,21 @@
         }
       }
 
-      // --- Uzupełnienie dolnego pasa (dla "wpoprzek") ---
       if (orientation === 'wpoprzek' && leftoverHeight > 0) {
         const bottomAvailableWidth = sceneWidth;
         const bottomAvailableHeight = leftoverHeight;
         const bottomCols = Math.floor(bottomAvailableWidth / rotatedPanelWidth);
         const bottomRows = Math.floor(bottomAvailableHeight / rotatedPanelHeight);
-
         for (let row = 0; row < bottomRows; row++) {
           for (let col = 0; col < bottomCols; col++) {
             const xPos = col * rotatedPanelWidth;
             if (xPos >= usedWidth) continue;
-
             const panelX = xPos;
             const panelY = usedHeight + row * rotatedPanelHeight;
             drawPanelAddon(panelX, panelY, rotatedPanelWidth, rotatedPanelHeight, 'rotated');
             rotatedCount++;
           }
         }
-
-        // Luka w prawym dolnym rogu
         const gapWidth = sceneWidth - bottomCols * rotatedPanelWidth;
         if (gapWidth > 0) {
           for (let row = 0; row < bottomAvailableHeight; row++) {
@@ -379,32 +371,25 @@
         }
       }
 
-      // Liczba nóg:
+      console.log('Primary paneli:', primaryCount);
+      console.log('Rotated paneli:', rotatedCount);
+      console.log('Unikalne nogi głównej sceny:', usedCornersMain.size);
+      console.log('Unikalne nogi dobudowanych:', usedCornersAddons.size);
+      
+      const totalPanels = primaryCount + rotatedCount;
       const totalLegs = usedCornersMain.size + usedCornersAddons.size;
-
-      // Wyświetlamy podsumowanie
-      const summaryDiv = document.getElementById('summary');
-      summaryDiv.textContent = (
-        `Podest główny: ${primaryCount} paneli.\n` +
-        `Uzupełniające: ${rotatedCount} paneli.\n` +
-        `\n` +
-        `Liczba unikalnych nóg (w głównej scenie): ${usedCornersMain.size}\n` +
-        `Liczba unikalnych nóg (w dobudowanych): ${usedCornersAddons.size}\n` +
-        `---------------------------------\n` +
-        `Łącznie: ${totalLegs} nóg.`
-      );
+      // Aktualizacja podsumowania w kontenerze formularza
+      const dataSummaryDiv = document.getElementById('dataSummary');
+      dataSummaryDiv.innerHTML = `
+        Liczba podestów: ${totalPanels}<br>
+        Liczba nóg: ${totalLegs}
+      `;
     };
   </script>
 
-  <!-- Test block: verifying that drawStage is accessible -->
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      console.log("Test 1: Checking if drawStage is defined in global scope.");
-      if (typeof window.drawStage === 'function') {
-        console.log("Test 1 passed: drawStage is defined.");
-      } else {
-        console.error("Test 1 failed: drawStage is not defined.");
-      }
+      console.log("Test: drawStage jest dostępna.");
     });
   </script>
 </body>
