@@ -14,7 +14,7 @@
         }
 
         body {
-            font-size: 12px; /* Standardowy rozmiar, zmień na większy/mniejszy */
+            font-size: 12px;
             font-family: Arial, sans-serif;
             background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
             background-size: cover;
@@ -56,7 +56,6 @@
             justify-content: space-between;
             align-items: center;
             padding: 5px 0;
-            flex-wrap: ;
         }
 
         .device-label {
@@ -94,7 +93,6 @@
             margin: 0;
         }
 
-        /* RESPONSYWNOŚĆ */
         @media (max-width: 200px) {
             .container {
                 width: 95%;
@@ -130,16 +128,59 @@
     <script>
         let devices = [];
         let availableDevices = [];
-        
-        fetch('/Wlodi-ile-nog/data/devices.json')
-            .then(response => response.json())
-            .then(data => {
-                devices = data.slice(0, 5);
-                availableDevices = data.slice(5);
-                renderDeviceList();
+        let allDevices = [];
+
+        // Zapis stanu do localStorage
+        function saveState() {
+            const state = {
+                devices: devices.map(device => {
+                    const quantityInput = document.getElementById('quantity-' + device.id);
+                    const checkbox = document.getElementById('device-' + device.id);
+                    return {
+                        id: device.id,
+                        quantity: quantityInput ? quantityInput.value : 1,
+                        isChecked: checkbox ? checkbox.checked : true
+                    };
+                }),
+                availableDevicesIds: availableDevices.map(device => device.id)
+            };
+            localStorage.setItem('deviceState', JSON.stringify(state));
+        }
+
+        // Odtwarzanie stanu z localStorage
+        function restoreState() {
+            const savedState = localStorage.getItem('deviceState');
+            if (savedState) {
+                const state = JSON.parse(savedState);
+                // Przywracamy urządzenia, które wcześniej były na liście
+                state.devices.forEach(savedDevice => {
+                    // Szukamy urządzenia w pełnej liście
+                    const device = allDevices.find(d => d.id === savedDevice.id);
+                    if (device) {
+                        // Jeśli urządzenie nie jest już dodane, dodajemy je
+                        if (!devices.find(d => d.id === device.id)) {
+                            addDeviceToList(device);
+                            devices.push(device);
+                        }
+                        // Ustawiamy wartość ilości oraz stan checkboxa
+                        const quantityInput = document.getElementById('quantity-' + device.id);
+                        const checkbox = document.getElementById('device-' + device.id);
+                        if (quantityInput) {
+                            quantityInput.value = savedDevice.quantity;
+                        }
+                        if (checkbox) {
+                            checkbox.checked = savedDevice.isChecked;
+                        }
+                    }
+                });
+                // Przywracamy listę dostępnych urządzeń
+                if(state.availableDevicesIds) {
+                    availableDevices = allDevices.filter(d => state.availableDevicesIds.indexOf(d.id) !== -1);
+                }
                 populateDeviceSelection();
-            })
-            .catch(error => console.error("Błąd ładowania danych:", error));
+                calculateEnergy();
+            }
+        }
 
         function populateDeviceSelection() {
             const select = document.getElementById('device-select');
@@ -178,7 +219,10 @@
             checkbox.value = device.pobor;
             checkbox.id = 'device-' + device.id;
             checkbox.checked = true;
-            checkbox.addEventListener('change', calculateEnergy);
+            checkbox.addEventListener('change', () => {
+                calculateEnergy();
+                saveState();
+            });
 
             const label = document.createElement('label');
             label.textContent = `${device.nazwa} (${device.pobor} W)`;
@@ -194,6 +238,7 @@
                 if (input.value > 1) {
                     input.value--;
                     calculateEnergy();
+                    saveState();
                 }
             };
 
@@ -203,7 +248,10 @@
             quantityInput.min = 1;
             quantityInput.id = 'quantity-' + device.id;
             quantityInput.classList.add('quantity-input');
-            quantityInput.oninput = calculateEnergy;
+            quantityInput.oninput = function () {
+                calculateEnergy();
+                saveState();
+            };
 
             const plusButton = document.createElement('button');
             plusButton.textContent = "+";
@@ -212,6 +260,7 @@
                 let input = document.getElementById('quantity-' + device.id);
                 input.value++;
                 calculateEnergy();
+                saveState();
             };
 
             labelContainer.appendChild(checkbox);
@@ -237,6 +286,7 @@
             
             populateDeviceSelection(); // Odśwież listę dostępnych urządzeń
             calculateEnergy();
+            saveState();
         }
 
         function calculateEnergy() {
@@ -251,11 +301,20 @@
             document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
         }
 
-
-
-
-
-        
+        window.onload = function() {
+            fetch('/Wlodi-ile-nog/data/devices.json')
+                .then(response => response.json())
+                .then(data => {
+                    allDevices = data;
+                    // Inicjalnie przyjmujemy, że pierwsze 5 urządzeń jest dodanych
+                    devices = data.slice(0, 5);
+                    availableDevices = data.slice(5);
+                    renderDeviceList();
+                    populateDeviceSelection();
+                    restoreState();
+                })
+                .catch(error => console.error("Błąd ładowania danych:", error));
+        };
     </script>
 </body>
 </html>
