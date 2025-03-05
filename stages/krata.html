@@ -398,7 +398,8 @@
       saveState();
     }
 
-    // Aktualizacja wizualizacji – podział na warstwy dla kratownicy i urządzeń
+    // Aktualizacja wizualizacji – rysujemy kratownicę (gridGroup) oraz urządzenia (devicesGroup)
+    // Dodatkowo na dolnej krawędzi kratownicy rysujemy małe czerwone kropki co 1 m, licząc od środka
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       const svgWidth = svg.clientWidth;
@@ -418,7 +419,7 @@
         svg.appendChild(devicesGroup);
       }
       
-      // Aktualizacja kratownicy – czyścimy tylko gridGroup
+      // Czyścimy gridGroup
       while (gridGroup.firstChild) { gridGroup.removeChild(gridGroup.firstChild); }
       const scale = svgWidth / gridLength;
       const rectHeight = (gridWidth / 1000) * scale;
@@ -433,11 +434,38 @@
       trussRect.setAttribute("stroke-width", "2");
       gridGroup.appendChild(trussRect);
       
-      // Aktualizacja urządzeń – czyścimy tylko devicesGroup
+      // Dodajemy czerwone kropki na dolnej krawędzi kratownicy
+      const centerX = svgWidth / 2;
+      const dotRadius = 3;
+      const dotY = rectY + rectHeight;
+      let m = 1;
+      while (true) {
+        let posRight = centerX + m * scale;
+        let posLeft = centerX - m * scale;
+        if (posRight > svgWidth && posLeft < 0) break;
+        if (posRight <= svgWidth) {
+          const dotRight = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          dotRight.setAttribute("cx", posRight);
+          dotRight.setAttribute("cy", dotY);
+          dotRight.setAttribute("r", dotRadius);
+          dotRight.setAttribute("fill", "red");
+          gridGroup.appendChild(dotRight);
+        }
+        if (posLeft >= 0) {
+          const dotLeft = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          dotLeft.setAttribute("cx", posLeft);
+          dotLeft.setAttribute("cy", dotY);
+          dotLeft.setAttribute("r", dotRadius);
+          dotLeft.setAttribute("fill", "red");
+          gridGroup.appendChild(dotLeft);
+        }
+        m++;
+      }
+      
+      // Czyścimy devicesGroup
       while (devicesGroup.firstChild) { devicesGroup.removeChild(devicesGroup.firstChild); }
       const devicesTop = rectY + rectHeight + 5;
-      const centerX = svgWidth / 2;
-      // Nowy rozmiar etykiety ustawiamy na scale/12
+      // Ustalamy rozmiar etykiety na podstawie kratownicy – scale/12 (trzykrotnie mniejszy)
       const fontSize = scale / 12;
       let groups = [];
       devices.forEach(device => {
@@ -566,7 +594,7 @@
         }
       });
     }
-
+    
     function calculateEnergy() {
       let totalPower = 0;
       devices.forEach(device => {
@@ -577,7 +605,7 @@
       document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
       updateTrussVisualization();
     }
-
+    
     // Funkcja clearAll – ustawiamy dla urządzeń aktywnych ilość na 0, a dla dostępnych na 1
     function clearAll() {
       devices.forEach(device => {
@@ -595,7 +623,7 @@
       calculateEnergy();
       saveState();
     }
-
+    
     function initGridLengthControls() {
       const minusBtn = document.getElementById('grid-length-minus');
       const plusBtn = document.getElementById('grid-length-plus');
@@ -625,7 +653,7 @@
         calculateEnergy();
       });
     }
-
+    
     function initGridWidthControl() {
       const widthSelect = document.getElementById('grid-width-select');
       widthSelect.addEventListener('change', () => {
@@ -634,7 +662,7 @@
         calculateEnergy();
       });
     }
-
+    
     window.onload = function() {
       fetch('/Wlodi-ile-nog/data/devices.json')
         .then(response => response.json())
