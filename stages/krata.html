@@ -382,6 +382,7 @@
       const selectedDevice = availableDevices.find(d => d.id === selectedId);
       if (!selectedDevice) return;
       if (!devices.find(d => d.id === selectedId)) {
+        // Przy dodawaniu, jeśli brak zapisanych wartości – ustawiamy domyślne
         selectedDevice.quantity = 0;
         selectedDevice.interval = 1.0;
         selectedDevice.isChecked = true;
@@ -437,7 +438,7 @@
       while (devicesGroup.firstChild) { devicesGroup.removeChild(devicesGroup.firstChild); }
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
-      // Obliczamy rozmiar etykiety na podstawie kratownicy (np. scale/4)
+      // Rozmiar etykiety ustalamy w oparciu o skalę kraty (scale/4)
       const fontSize = scale / 4;
       let groups = [];
       devices.forEach(device => {
@@ -578,10 +579,23 @@
       updateTrussVisualization();
     }
 
-    // Uproszczona wersja funkcji clearAll – czyścimy stan i przeładowujemy stronę
+    // Funkcja clearAll – bez odświeżania strony: 
+    // Ustawiamy dla urządzeń aktywnych ilość na 0, a dla dostępnych na 1
     function clearAll() {
-      localStorage.clear();
-      window.location.reload();
+      devices.forEach(device => {
+        device.quantity = 0;
+        device.interval = 1.0;
+        device.isChecked = true;
+      });
+      availableDevices.forEach(device => {
+        device.quantity = 1;
+        device.interval = 1.0;
+        device.isChecked = true;
+      });
+      renderDeviceList();
+      populateDeviceSelection();
+      calculateEnergy();
+      saveState();
     }
 
     function initGridLengthControls() {
