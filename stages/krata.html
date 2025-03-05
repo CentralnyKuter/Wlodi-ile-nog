@@ -9,7 +9,7 @@
       --container-bg: rgba(30, 30, 30, 0.85);
       --button-bg: #FF9800;
       --button-hover: #E68900;
-      --input-width: 40px;  /* zwiększone, by ładniej wyświetlać wartości */
+      --input-width: 40px;  /* większa szerokość inputów */
       --button-size: 12px;
     }
 
@@ -23,7 +23,6 @@
       margin: 20px;
     }
 
-    /* Kontener główny na cały formularz i przyciski */
     .container {
       background: var(--container-bg);
       padding: 20px;
@@ -31,7 +30,7 @@
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
       text-align: left;
       width: 95%;
-      max-width: 900px; /* powiększamy, by zmieścić wszystko w jednym rzędzie */
+      max-width: 900px; /* szerzej, by wszystko było w jednym rzędzie */
       margin: auto;
       margin-bottom: 20px;
     }
@@ -52,13 +51,12 @@
       background-color: var(--button-hover);
     }
 
-    /* Każde urządzenie w jednej linii */
     .device-container {
       display: flex;
       flex-direction: row;
       align-items: center;
       justify-content: flex-start;
-      gap: 15px; /* odstęp między blokami */
+      gap: 15px; /* odstęp poziomy między blokami */
       margin-bottom: 10px;
       border: 1px solid #666;
       border-radius: 6px;
@@ -70,7 +68,7 @@
       align-items: center;
       gap: 10px;
       font-size: 1em;
-      min-width: 220px; /* aby checkbox i nazwa się mieściły */
+      min-width: 220px; /* aby checkbox i nazwa mieściły się w jednej linii */
     }
 
     .quantity-controls {
@@ -126,7 +124,6 @@
       text-align: center;
       margin: 0 0 10px 0;
     }
-
   </style>
 </head>
 <body>
@@ -155,6 +152,7 @@
     <select id="device-select" style="min-width: 220px;"></select>
     <button class="button" onclick="addSelectedDevice()">Dodaj urządzenie</button>
     <button class="button" onclick="clearAll()">Clear all</button>
+
     <h3 id="total-energy">Całkowity pobór: 0 W</h3>
   </div>
 
@@ -162,7 +160,7 @@
   <div class="visualization-container">
     <h3>Wizualizacja rozmieszczenia</h3>
     <!-- SVG, w którym będziemy rysować kratę i urządzenia -->
-    <svg id="truss-visualization" width="600" height="120" style="border:1px solid #fff;"></svg>
+    <svg id="truss-visualization" width="700" height="120" style="border:1px solid #fff;"></svg>
   </div>
 
   <script>
@@ -171,7 +169,7 @@
     let allDevices = [];        // Wszystkie urządzenia z pliku JSON
     let gridLength = 12;        // Domyślna długość kraty w metrach
 
-    // Kolory do wizualizacji (możesz dodać więcej)
+    // Kolory do wizualizacji:
     const colorPalette = [
       "#e6194b","#3cb44b","#ffe119","#0082c8","#f58231","#911eb4",
       "#46f0f0","#f032e6","#d2f53c","#fabebe","#008080","#e6beff",
@@ -277,7 +275,7 @@
       });
     }
 
-    // Dodaje jeden wiersz dla konkretnego urządzenia
+    // Dodaje jeden wiersz (blok) dla konkretnego urządzenia
     function addDeviceToList(device) {
       const container = document.createElement('div');
       container.classList.add('device-container');
@@ -435,7 +433,7 @@
       updateTrussVisualization();
     }
 
-    // Wizualizacja na kracie (w SVG)
+    // Wizualizacja na kracie (w SVG), rozsuwa urządzenia symetrycznie od środka
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) {
@@ -445,7 +443,7 @@
       const svgWidth = svg.clientWidth;  
       const svgHeight = svg.clientHeight;
 
-      // Rysujemy linię kraty
+      // Rysujemy linię kraty (środek)
       const lineY = svgHeight / 2;
       const trussLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
       trussLine.setAttribute("x1", "0");
@@ -457,54 +455,98 @@
       svg.appendChild(trussLine);
 
       const centerX = svgWidth / 2;  
-      // skala px/m (ewentualnie użyteczna w przyszłości)
-      // const scale = svgWidth / gridLength;
+      // Skala px/m
+      const scale = svgWidth / gridLength;
 
-      // Tworzymy listę egzemplarzy do narysowania
+      // Utworzymy tablicę "blocks", gdzie każdy element reprezentuje
+      // jeden egzemplarz (sztukę) danego urządzenia.
+      // Będziemy tam także trzymać "intervalM" dla obliczeń
       let blocks = [];
+
       devices.forEach(device => {
         const checkbox = document.getElementById('device-' + device.id);
         const quantityInput = document.getElementById('quantity-' + device.id);
-        // const intervalInput = document.getElementById('interval-' + device.id);
+        const intervalInput = document.getElementById('interval-' + device.id);
 
-        if (checkbox && checkbox.checked && quantityInput) {
+        if (checkbox && checkbox.checked && quantityInput && intervalInput) {
           const qty = parseInt(quantityInput.value) || 0;
+          const intervalM = parseFloat(intervalInput.value) || 0;
+          
           for (let i = 0; i < qty; i++) {
-            blocks.push(device);
+            blocks.push({
+              device: device,
+              intervalM: intervalM
+            });
           }
         }
       });
 
-      // Jeśli brak bloków, nic nie rysujemy
+      // Jeśli brak egzemplarzy, koniec
       if (blocks.length === 0) return;
 
-      // Na razie – zgodnie z życzeniem – wrzucamy *wszystkie* egzemplarze w to samo miejsce (centerX).
-      // Będą się nakładały na siebie
-      blocks.forEach(block => {
-        const device = block;
-        const colorIndex = (device.id - 1) % colorPalette.length;
+      // Obliczamy łączną szerokość (w pikselach), aby wyśrodkować
+      // Każdy block: ma szerokość deviceWidthPx + ewentualny odstęp (intervalPx) po nim
+      // device.szer jest w JSON np. 40 => to 40 cm => 0.4 m
+      // Lepiej przeliczyć: deviceWidthM = device.szer * 0.01
+      // a w px => deviceWidthPx = deviceWidthM * scale
+      let totalWidthPx = 0;
+
+      blocks.forEach((block, idx) => {
+        const dev = block.device;
+        const wM = dev.szer * 0.01;  // np. 40 => 0.4 m
+        const wPx = wM * scale;
+        totalWidthPx += wPx;
+
+        // Interwał – dodajemy go po *każdym* egzemplarzu (poza ostatnim),
+        // w tym przykładzie tak przyjmujemy. 
+        // Jeżeli chcesz, aby interwał był tylko między egzemplarzami TEGO SAMEGO typu,
+        // należałoby sprawdzić, czy blocks[idx+1] ma to samo device.id, itp.
+        // Teraz po prostu dodajemy i tyle:
+        if (idx < blocks.length - 1) {
+          const intervalPx = block.intervalM * scale;
+          totalWidthPx += intervalPx;
+        }
+      });
+
+      // Start rysowania, żeby to było wycentrowane:
+      let xStart = centerX - totalWidthPx / 2;
+
+      // Teraz rzeczywiste rysowanie
+      blocks.forEach((block, idx) => {
+        const dev = block.device;
+        const colorIndex = (dev.id - 1) % colorPalette.length;
         const color = colorPalette[colorIndex];
 
-        // Rysujemy prostokąt / kształt
+        // szerokość egzemplarza w pikselach
+        const devWidthM = dev.szer * 0.01;
+        const devWidthPx = devWidthM * scale;
+
+        // Rysujemy prostokąt
         const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        // Środek kraty w poziomie, 20 px szerokości "na sztywno" – bo i tak się nachodzą
-        // (gdy zechcesz użyć rzeczywistych rozmiarów – wykorzystaj device.szer i scale)
-        rect.setAttribute("x", centerX - 10);
-        rect.setAttribute("y", lineY - 20); 
-        rect.setAttribute("width", 20);
+        rect.setAttribute("x", xStart);
+        rect.setAttribute("y", lineY - 20);
+        rect.setAttribute("width", devWidthPx);
         rect.setAttribute("height", 40);
         rect.setAttribute("fill", color);
         svg.appendChild(rect);
 
         // Etykieta (nazwa)
         const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", centerX);
+        label.setAttribute("x", xStart + devWidthPx / 2);
         label.setAttribute("y", lineY - 25);
         label.setAttribute("text-anchor", "middle");
         label.setAttribute("font-size", "10");
         label.setAttribute("fill", "#fff");
-        label.textContent = device.nazwa;
+        label.textContent = dev.nazwa;
         svg.appendChild(label);
+
+        // Przesuwamy xStart do rysowania kolejnego egzemplarza
+        xStart += devWidthPx;
+        if (idx < blocks.length - 1) {
+          // Dodajemy interwał
+          const intervalPx = block.intervalM * scale;
+          xStart += intervalPx;
+        }
       });
     }
 
@@ -560,13 +602,14 @@
       });
     }
 
+    // Inicjowanie po załadowaniu strony
     window.onload = function() {
-      // Zmień ścieżkę fetch jeśli trzeba albo wklej dane na stałe
+      // Wstaw ścieżkę do devices.json lub wklej dane na sztywno
       fetch('/Wlodi-ile-nog/data/devices.json')
         .then(response => response.json())
         .then(data => {
           allDevices = data;
-          // Początkowo np. 5 urządzeń w "devices", reszta w "availableDevices"
+          // Na starcie: 5 urządzeń w "devices", reszta w "availableDevices"
           devices = allDevices.slice(0, 5);
           availableDevices = allDevices.slice(5);
 
