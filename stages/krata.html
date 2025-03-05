@@ -21,7 +21,6 @@
       text-align: center;
       margin: 20px;
     }
-    /* Kontener formularza – szeroki, aby zmieścić wszystkie kontrolki */
     .container {
       background: var(--container-bg);
       padding: 20px;
@@ -48,7 +47,6 @@
     .button:hover {
       background-color: var(--button-hover);
     }
-    /* Ustawienia parametrów kratownicy – długość i szerokość obok siebie */
     .grid-params-container {
       display: flex;
       justify-content: space-between;
@@ -67,7 +65,7 @@
       font-size: 1em;
       font-weight: bold;
     }
-    /* Każdy wiersz urządzenia – wszystkie kontrolki w jednej linii */
+    /* Opcja globalna nie jest już używana – teraz opcja per urządzenie */
     .device-container {
       display: flex;
       flex-direction: row;
@@ -109,7 +107,7 @@
       -webkit-appearance: none;
       margin: 0;
     }
-    /* Opcja wyrównania od środka dla urządzenia */
+    /* Opcja wyrównania od środka per urządzenie */
     .center-align-option {
       display: flex;
       align-items: center;
@@ -118,7 +116,6 @@
     .center-align-option label {
       font-size: 0.9em;
     }
-    /* Kontener wizualizacji */
     .visualization-container {
       width: 90%;
       max-width: 900px;
@@ -136,7 +133,7 @@
 <body>
   <div class="container">
     <h2>Choose your weapon!</h2>
-    <!-- Ustawienia parametrów kratownicy -->
+    <!-- Parametry kratownicy -->
     <div class="grid-params-container">
       <div class="grid-length-container">
         <label for="grid-length-input">Długość kraty (m):</label>
@@ -161,7 +158,7 @@
     <button class="button" onclick="clearAll()">Clear all</button>
     <h3 id="total-energy">Całkowity pobór: 0 W</h3>
   </div>
-  <!-- Wizualizacja – kratownica jako prostokąt, urządzenia umieszczone pod kratą -->
+  <!-- Wizualizacja -->
   <div class="visualization-container">
     <h3>Wizualizacja rozmieszczenia</h3>
     <svg id="truss-visualization" width="900" height="550" style="border:1px solid #fff;"></svg>
@@ -180,7 +177,7 @@
       "#000080","#808080","#000000"
     ];
 
-    // W funkcji saveState przechowujemy stan urządzeń (niezmiennie)
+    // Zapis stanu – zapisujemy również per‑device opcję centerAlign
     function saveState() {
       const state = {
         devices: devices.map(device => {
@@ -210,7 +207,7 @@
       state.devices.forEach(savedDevice => {
         const device = allDevices.find(d => d.id === savedDevice.id);
         if (device && !devices.find(d => d.id === device.id)) {
-          device.centerAlign = savedDevice.centerAlign; // zapamiętujemy opcję wyrównania od środka
+          device.centerAlign = savedDevice.centerAlign; // zapamiętujemy per‑device opcję
           devices.push(device);
         }
       });
@@ -405,14 +402,10 @@
       updateTrussVisualization();
     }
 
-    // Rysujemy kratownicę jako prostokąt z zachowaniem proporcji:
-    // - Skala: svgWidth / gridLength (px/m)
-    // - Wysokość kratownicy: (gridWidth / 1000) * scale
-    // Urządzenia (prostokąty lub obrazki) umieszczamy tak, że ich górne krawędzie są dokładnie 5px poniżej dolnej krawędzi kratownicy.
-    // Dla urządzeń, które mają ustawioną opcję centerAlign (przez per‑device checkbox),
-    // odstępy są liczone od środka – czyli środek każdego egzemplarza ustawiany jest według (intervalM * scale),
-    // a lewy brzeg obliczamy jako (środek - devWidthPx/2).
-    // Dla pozostałych urządzeń stosowany jest standardowy tryb.
+    // Funkcja rysująca kratownicę oraz grupy urządzeń.
+    // Górna krawędź urządzeń (prostokątów lub obrazków) ustawiana jest dokładnie 5px poniżej kratownicy.
+    // Dla urządzenia w trybie centerAlign (checkbox per-device) obliczamy pozycje na podstawie środków,
+    // w przeciwnym razie pozycje liczone są od lewej krawędzi.
     // Obrazki dla "Robe 800", "Quantum" i "Aura XIP" są wstawiane według odpowiednich ścieżek.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
@@ -420,7 +413,7 @@
       const svgWidth = svg.clientWidth;
       const svgHeight = svg.clientHeight;
       
-      // Skala: piksele na metr (dla długości kratownicy)
+      // Skala: piksele na metr
       const scale = svgWidth / gridLength;
       // Obliczamy wysokość kratownicy (przeliczając mm na m)
       const rectHeight = (gridWidth / 1000) * scale;
@@ -437,11 +430,11 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Górna krawędź urządzeń: 5px poniżej dolnej krawędzi kratownicy
+      // Górna krawędź urządzeń – dokładnie 5px poniżej kratownicy
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       
-      // Grupujemy urządzenia wg typu – każda grupa dotyczy jednego typu urządzenia
+      // Grupujemy urządzenia wg typu
       let groups = [];
       devices.forEach(device => {
         const checkbox = document.getElementById('device-' + device.id);
@@ -451,20 +444,26 @@
           const qty = parseInt(quantityInput.value) || 0;
           if (qty > 0) {
             const intervalM = parseFloat(intervalInput.value) || 0;
-            // Obliczamy szerokość urządzenia (w cm -> m -> px)
+            // Obliczamy szerokość urządzenia (przeliczając cm->m->px)
             const devWidthM = device.szer * 0.01;
             const devWidthPx = devWidthM * scale;
-            // Obliczamy wysokość urządzenia (w cm -> m -> px)
+            // Obliczamy wysokość urządzenia (przeliczając cm->m->px)
             let devHeightPx = device.wys * 0.01 * scale;
-            // Dla obrazków używamy tych samych obliczeń (bez dodatkowego przesunięcia)
+            // Określamy, czy dla tego urządzenia checkbox centerAlign jest zaznaczony
+            const centerCheckbox = document.getElementById('center-align-' + device.id);
+            const centerAlign = centerCheckbox ? centerCheckbox.checked : false;
+            device.centerAlign = centerAlign; // zapisujemy tę wartość w obiekcie
+            // Dla obrazków – "Robe 800", "Quantum", "Aura XIP" – stosujemy te same obliczenia
             const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
             const isQuantum = device.nazwa.indexOf("Quantum") !== -1;
             const isAuraXIP = device.nazwa.indexOf("Aura XIP") !== -1;
-            // Ustalamy tryb: jeżeli device.centerAlign (checkbox w wierszu) jest zaznaczony, to odstępy liczymy od środka
             let groupWidth;
-            if (device.centerAlign) {
+            if (centerAlign) {
+              // Odstępy liczone od środka: środek grupy to centerX, a grupa rozciąga się o:
+              // groupWidth = devWidthPx + (qty - 1) * (intervalM * scale)
               groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
             } else {
+              // Standardowy tryb: groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale)
               groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
             }
             groups.push({ device, qty, intervalM, groupWidth, devWidthPx, devHeightPx });
@@ -474,9 +473,63 @@
       
       if (groups.length === 0) return;
       
+      // Dla każdej grupy, umieszczamy ją wycentrowaną względem środka kratownicy
       groups.forEach(group => {
-        if (!group.device.centerAlign || group.device.nazwa.indexOf("Robe 800") !== -1 || group.device.nazwa.indexOf("Quantum") !== -1 || group.device.nazwa.indexOf("Aura XIP") !== -1) {
-          // Standardowy tryb: rozmieszczanie sekwencyjne
+        // Jeśli tryb centerAlign jest zaznaczony dla danej grupy, obliczamy pozycje na podstawie środków:
+        if (group.device.centerAlign) {
+          // Obliczamy pozycje środków: odstęp między środkami wynosi (intervalM * scale)
+          // Cała grupa rozciąga się na: groupWidth = devWidthPx + (qty - 1) * (intervalM * scale)
+          for (let i = 0; i < group.qty; i++) {
+            const centerPos = centerX - ((group.qty - 1) * (group.intervalM * scale)) / 2 + i * (group.intervalM * scale);
+            const leftEdge = centerPos - (group.devWidthPx / 2);
+            const isImage = group.device.nazwa.indexOf("Robe 800") !== -1 ||
+                            group.device.nazwa.indexOf("Quantum") !== -1 ||
+                            group.device.nazwa.indexOf("Aura XIP") !== -1;
+            if (isImage) {
+              const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+              img.setAttribute("x", leftEdge);
+              img.setAttribute("y", devicesTop);
+              img.setAttribute("width", group.devWidthPx);
+              img.setAttribute("height", group.devHeightPx);
+              let imgSrc = "";
+              if (group.device.nazwa.indexOf("Robe 800") !== -1) {
+                imgSrc = "/Wlodi-ile-nog/images/800.png";
+              } else if (group.device.nazwa.indexOf("Quantum") !== -1) {
+                imgSrc = "/Wlodi-ile-nog/images/quantum.png";
+              } else if (group.device.nazwa.indexOf("Aura XIP") !== -1) {
+                imgSrc = "/Wlodi-ile-nog/images/aura.png";
+              }
+              img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
+              svg.appendChild(img);
+              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+              devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
+              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("text-anchor", "middle");
+              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("fill", "#fff");
+              devLabel.textContent = group.device.nazwa;
+              svg.appendChild(devLabel);
+            } else {
+              const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+              devRect.setAttribute("x", leftEdge);
+              devRect.setAttribute("y", devicesTop);
+              devRect.setAttribute("width", group.devWidthPx);
+              devRect.setAttribute("height", group.devHeightPx);
+              const color = colorPalette[(group.device.id - 1) % colorPalette.length];
+              devRect.setAttribute("fill", color);
+              svg.appendChild(devRect);
+              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+              devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
+              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("text-anchor", "middle");
+              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("fill", "#fff");
+              devLabel.textContent = group.device.nazwa;
+              svg.appendChild(devLabel);
+            }
+          }
+        } else {
+          // Standardowy tryb: rozmieszczamy egzemplarze sekwencyjnie
           let xStart = centerX - (group.groupWidth / 2);
           for (let i = 0; i < group.qty; i++) {
             const isImage = group.device.nazwa.indexOf("Robe 800") !== -1 ||
@@ -527,58 +580,6 @@
             xStart += group.devWidthPx;
             if (i < group.qty - 1) {
               xStart += group.intervalM * scale;
-            }
-          }
-        } else {
-          // Tryb "od środka": rozmieszczamy tak, że środki urządzeń są oddalone o (intervalM * scale)
-          let xStart = centerX - (group.groupWidth / 2);
-          for (let i = 0; i < group.qty; i++) {
-            const centerPos = xStart + (i * (group.intervalM * scale));
-            const leftEdge = centerPos - (group.devWidthPx / 2);
-            const isImage = group.device.nazwa.indexOf("Robe 800") !== -1 ||
-                            group.device.nazwa.indexOf("Quantum") !== -1 ||
-                            group.device.nazwa.indexOf("Aura XIP") !== -1;
-            if (isImage) {
-              const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-              img.setAttribute("x", leftEdge);
-              img.setAttribute("y", devicesTop);
-              img.setAttribute("width", group.devWidthPx);
-              img.setAttribute("height", group.devHeightPx);
-              let imgSrc = "";
-              if (group.device.nazwa.indexOf("Robe 800") !== -1) {
-                imgSrc = "/Wlodi-ile-nog/images/800.png";
-              } else if (group.device.nazwa.indexOf("Quantum") !== -1) {
-                imgSrc = "/Wlodi-ile-nog/images/quantum.png";
-              } else if (group.device.nazwa.indexOf("Aura XIP") !== -1) {
-                imgSrc = "/Wlodi-ile-nog/images/aura.png";
-              }
-              img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
-              svg.appendChild(img);
-              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-              devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
-              devLabel.setAttribute("y", devicesTop - 5);
-              devLabel.setAttribute("text-anchor", "middle");
-              devLabel.setAttribute("font-size", "10");
-              devLabel.setAttribute("fill", "#fff");
-              devLabel.textContent = group.device.nazwa;
-              svg.appendChild(devLabel);
-            } else {
-              const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-              devRect.setAttribute("x", leftEdge);
-              devRect.setAttribute("y", devicesTop);
-              devRect.setAttribute("width", group.devWidthPx);
-              devRect.setAttribute("height", group.devHeightPx);
-              const color = colorPalette[(group.device.id - 1) % colorPalette.length];
-              devRect.setAttribute("fill", color);
-              svg.appendChild(devRect);
-              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-              devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
-              devLabel.setAttribute("y", devicesTop - 5);
-              devLabel.setAttribute("text-anchor", "middle");
-              devLabel.setAttribute("font-size", "10");
-              devLabel.setAttribute("fill", "#fff");
-              devLabel.textContent = group.device.nazwa;
-              svg.appendChild(devLabel);
             }
           }
         }
