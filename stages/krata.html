@@ -21,7 +21,7 @@
       text-align: center;
       margin: 20px;
     }
-    /* Kontener formularza – szeroki, aby zmieścić wszystkie kontrolki */
+    /* Kontener formularza – rozmiar stały (95% szerokości, max 900px) */
     .container {
       background: var(--container-bg);
       padding: 20px;
@@ -117,12 +117,18 @@
     .center-align-option label {
       font-size: 0.9em;
     }
-    /* Kontener wizualizacji – usunięto nagłówek oraz biały obrys, rozmiar dopasowany do zawartości */
+    /* Kontener wizualizacji – stałe wymiary jak formularz */
     .visualization-container {
-      width: 90%;
+      width: 95%;
       max-width: 900px;
+      height: 550px;
       margin: 20px auto;
-      /* Usunięto tło i padding, aby kontener dopasowywał się do zawartości */
+    }
+    /* SVG wypełnia cały kontener */
+    #truss-visualization {
+      width: 100%;
+      height: 100%;
+      display: block;
     }
   </style>
 </head>
@@ -154,7 +160,7 @@
     <button class="button" onclick="clearAll()">Clear all</button>
     <h3 id="total-energy">Całkowity pobór: 0 W</h3>
   </div>
-  <!-- Wizualizacja – SVG bez nagłówka i obrysu -->
+  <!-- Kontener wizualizacji – stały rozmiar -->
   <div class="visualization-container">
     <svg id="truss-visualization"></svg>
   </div>
@@ -172,7 +178,6 @@
       "#000080","#808080","#000000"
     ];
 
-    // Zapis stanu – per-device opcja centerAlign
     function saveState() {
       const state = {
         devices: devices.map(device => {
@@ -398,18 +403,18 @@
     }
 
     // Rysujemy kratownicę oraz grupy urządzeń.
-    // Górna krawędź każdego elementu ustawiamy na dokładnie 5px poniżej kratownicy.
-    // Jeśli dla danego urządzenia checkbox "Wyrównaj od środka" jest zaznaczony,
-    // odstępy między egzemplarzami liczymy na podstawie środków (środek = lewy + (devWidthPx/2)).
+    // Górna krawędź elementów ustawiamy na 5px poniżej kratownicy.
+    // Dla urządzenia z opcją centerAlign (checkbox per-device) rozmieszczamy egzemplarze na podstawie ich środków.
+    // Dla pozostałych – standardowo (od lewej krawędzi).
     // Obrazki dla "Robe 800", "Quantum" i "Aura XIP" są wstawiane według odpowiednich ścieżek.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
       const svgWidth = svg.clientWidth;
       
-      // Używamy tej samej skali: px/m
+      // Skala: piksele na metr
       const scale = svgWidth / gridLength;
-      // Obliczamy wysokość kratownicy
+      // Wysokość kratownicy (przeliczając mm na m)
       const rectHeight = (gridWidth / 1000) * scale;
       
       // Rysujemy kratownicę od 20px od góry
@@ -424,7 +429,7 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Górna krawędź urządzeń: 5px poniżej kratownicy
+      // Górna krawędź elementów: 5px poniżej kratownicy
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       
@@ -443,18 +448,17 @@
             const devWidthPx = devWidthM * scale;
             // Wysokość urządzenia
             let devHeightPx = device.wys * 0.01 * scale;
-            // Sprawdzamy, czy urządzenie ma obrazkową reprezentację
-            const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
-            const isQuantum = device.nazwa.indexOf("Quantum") !== -1;
-            const isAuraXIP = device.nazwa.indexOf("Aura XIP") !== -1;
-            // Sprawdzamy per-device opcję wyrównania
+            // Sprawdzamy, czy dla danego urządzenia opcja centerAlign jest aktywna
             const centerCheckbox = document.getElementById('center-align-' + device.id);
             const centerAlign = centerCheckbox ? centerCheckbox.checked : false;
             device.centerAlign = centerAlign;
             
+            // Dla obrazków: Robe 800, Quantum, Aura XIP – zawsze stosujemy tę samą metodę rozmieszczania (od środków lub od lewej krawędzi)
+            const isImage = device.nazwa.indexOf("Robe 800") !== -1 ||
+                            device.nazwa.indexOf("Quantum") !== -1 ||
+                            device.nazwa.indexOf("Aura XIP") !== -1;
             let groupWidth;
             if (centerAlign) {
-              // Liczymy od środków: odstęp między środkami wynosi (intervalM * scale)
               groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
             } else {
               groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
@@ -467,8 +471,8 @@
       if (groups.length === 0) return;
       
       groups.forEach(group => {
-        if (!group.device.centerAlign || group.device.nazwa.indexOf("Robe 800") !== -1 || group.device.nazwa.indexOf("Quantum") !== -1 || group.device.nazwa.indexOf("Aura XIP") !== -1) {
-          // Standardowy tryb: rozmieszczamy sekwencyjnie od lewej krawędzi grupy
+        if (!group.device.centerAlign || (group.device.nazwa.indexOf("Robe 800") !== -1 || group.device.nazwa.indexOf("Quantum") !== -1 || group.device.nazwa.indexOf("Aura XIP") !== -1)) {
+          // Standardowy tryb – rozmieszczamy sekwencyjnie od lewej krawędzi grupy
           let xStart = centerX - (group.groupWidth / 2);
           for (let i = 0; i < group.qty; i++) {
             const isImage = group.device.nazwa.indexOf("Robe 800") !== -1 ||
@@ -490,10 +494,11 @@
               }
               img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
               svg.appendChild(img);
-              // Obliczamy font-size proporcjonalnie do wysokości urządzenia (np. 20% wysokości)
+              // Skalujemy etykietę – np. font-size jako 20% wysokości urządzenia
               const fontSize = group.devHeightPx * 0.2;
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
+              // Umieszczamy etykietę 5px poniżej elementu
               devLabel.setAttribute("y", devicesTop + group.devHeightPx + fontSize + 5);
               devLabel.setAttribute("text-anchor", "middle");
               devLabel.setAttribute("font-size", fontSize);
