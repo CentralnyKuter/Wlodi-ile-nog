@@ -375,8 +375,8 @@
     // Rysujemy kratownicę jako prostokąt z zachowaniem proporcji:
     // - Skala: svgWidth / gridLength (px/m)
     // - Wysokość kratownicy: (gridWidth / 1000) * scale
-    // Urządzenia umieszczamy 5px poniżej kratownicy, a każda grupa (typu urządzenia) jest wycentrowana
-    // względem całej szerokości SVG.
+    // Urządzenia umieszczamy 5px poniżej kratownicy (dodajemy offset, np. 20px dodatkowo),
+    // a każda grupa urządzeń (typu) jest wycentrowana względem całej szerokości SVG.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
@@ -388,7 +388,7 @@
       // Obliczamy wysokość kratownicy (przeliczając mm na m)
       const rectHeight = (gridWidth / 1000) * scale;
       
-      // Pozycja kratownicy – rysujemy prostokąt od 20px od góry
+      // Rysujemy kratownicę od 20px od góry
       const rectY = 20;
       const trussRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       trussRect.setAttribute("x", "0");
@@ -400,11 +400,11 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Urządzenia umieszczamy 5px poniżej kratownicy + dodatkowy offset (tutaj 20px), czyli razem 25px poniżej
+      // Urządzenia umieszczamy 25px poniżej kratownicy (5px + 20px dodatkowego offsetu)
       const devicesY = rectY + rectHeight + 25;
       const centerX = svgWidth / 2;
       
-      // Grupujemy urządzenia wg typu – każda grupa dotyczy jednego urządzenia (typu)
+      // Grupujemy urządzenia wg typu – każda grupa dotyczy jednego typu urządzenia
       let groups = [];
       devices.forEach(device => {
         const checkbox = document.getElementById('device-' + device.id);
@@ -414,35 +414,39 @@
           const qty = parseInt(quantityInput.value) || 0;
           if (qty > 0) {
             const intervalM = parseFloat(intervalInput.value) || 0;
+            // Przeliczamy szerokość i wysokość urządzenia (zakładamy, że s oznacza cm, a wys to cm)
             const devWidthM = device.szer * 0.01; // np. 40 cm -> 0.4 m
             const devWidthPx = devWidthM * scale;
+            const devHeightPx = device.wys * 0.01 * scale; // przeliczona wysokość
             let groupWidth = qty * devWidthPx;
             if (qty > 1) {
               groupWidth += (qty - 1) * (intervalM * scale);
             }
-            groups.push({ device, qty, intervalM, groupWidth, devWidthPx });
+            groups.push({ device, qty, intervalM, groupWidth, devWidthPx, devHeightPx });
           }
         }
       });
       
       if (groups.length === 0) return;
       
-      // Każda grupa jest wycentrowana względem całej szerokości SVG (niezależnie od innych)
+      // Każda grupa jest wycentrowana względem całej szerokości SVG
       groups.forEach(group => {
         let xStart = centerX - (group.groupWidth / 2);
         for (let i = 0; i < group.qty; i++) {
           const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
           devRect.setAttribute("x", xStart);
-          devRect.setAttribute("y", devicesY - 20);
+          // Umieszczamy prostokąt urządzenia tak, aby był poniżej kratownicy
+          devRect.setAttribute("y", devicesY - group.devHeightPx);
           devRect.setAttribute("width", group.devWidthPx);
-          devRect.setAttribute("height", 40);
+          devRect.setAttribute("height", group.devHeightPx);
           const color = colorPalette[(group.device.id - 1) % colorPalette.length];
           devRect.setAttribute("fill", color);
           svg.appendChild(devRect);
           
           const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
           devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
-          devLabel.setAttribute("y", devicesY - 25);
+          // Umieszczamy etykietę powyżej prostokąta urządzenia (np. 5px nad nim)
+          devLabel.setAttribute("y", (devicesY - group.devHeightPx) - 5);
           devLabel.setAttribute("text-anchor", "middle");
           devLabel.setAttribute("font-size", "10");
           devLabel.setAttribute("fill", "#fff");
