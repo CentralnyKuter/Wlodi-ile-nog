@@ -21,6 +21,7 @@
       text-align: center;
       margin: 20px;
     }
+    /* Kontener formularza – szeroki, aby zmieścić wszystkie kontrolki */
     .container {
       background: var(--container-bg);
       padding: 20px;
@@ -47,6 +48,7 @@
     .button:hover {
       background-color: var(--button-hover);
     }
+    /* Ustawienia parametrów kratownicy – długość i szerokość obok siebie */
     .grid-params-container {
       display: flex;
       justify-content: space-between;
@@ -65,6 +67,7 @@
       font-size: 1em;
       font-weight: bold;
     }
+    /* Każdy wiersz urządzenia – wszystkie kontrolki w jednej linii */
     .device-container {
       display: flex;
       flex-direction: row;
@@ -106,6 +109,7 @@
       -webkit-appearance: none;
       margin: 0;
     }
+    /* Kontener wizualizacji */
     .visualization-container {
       width: 90%;
       max-width: 900px;
@@ -123,7 +127,7 @@
 <body>
   <div class="container">
     <h2>Choose your weapon!</h2>
-    <!-- Ustawienia kratownicy -->
+    <!-- Ustawienia parametrów kratownicy -->
     <div class="grid-params-container">
       <div class="grid-length-container">
         <label for="grid-length-input">Długość kraty (m):</label>
@@ -148,7 +152,7 @@
     <button class="button" onclick="clearAll()">Clear all</button>
     <h3 id="total-energy">Całkowity pobór: 0 W</h3>
   </div>
-  <!-- Wizualizacja -->
+  <!-- Wizualizacja – kratownica jako prostokąt, urządzenia umieszczone pod spodem -->
   <div class="visualization-container">
     <h3>Wizualizacja rozmieszczenia</h3>
     <svg id="truss-visualization" width="900" height="550" style="border:1px solid #fff;"></svg>
@@ -247,6 +251,7 @@
     function addDeviceToList(device) {
       const container = document.createElement('div');
       container.classList.add('device-container');
+      
       const labelContainer = document.createElement('div');
       labelContainer.classList.add('device-label');
       const checkbox = document.createElement('input');
@@ -259,6 +264,7 @@
       label.textContent = `${device.nazwa} (${device.pobor} W)`;
       labelContainer.appendChild(checkbox);
       labelContainer.appendChild(label);
+      
       const quantityContainer = document.createElement('div');
       quantityContainer.classList.add('quantity-controls');
       const minusButton = document.createElement('button');
@@ -291,6 +297,7 @@
       quantityContainer.appendChild(minusButton);
       quantityContainer.appendChild(quantityInput);
       quantityContainer.appendChild(plusButton);
+      
       const intervalContainer = document.createElement('div');
       intervalContainer.classList.add('quantity-controls');
       const minusIntervalButton = document.createElement('button');
@@ -329,6 +336,7 @@
       intervalContainer.appendChild(minusIntervalButton);
       intervalContainer.appendChild(intervalInput);
       intervalContainer.appendChild(plusIntervalButton);
+      
       container.appendChild(labelContainer);
       container.appendChild(quantityContainer);
       container.appendChild(intervalContainer);
@@ -364,9 +372,11 @@
       updateTrussVisualization();
     }
 
-    // Rysujemy kratownicę jako prostokąt z zachowaniem proporcji,
-    // a każda grupa urządzeń (typu) jest wycentrowana względem całej szerokości kratownicy,
-    // niezależnie od innych – urządzenia rysujemy 5px poniżej kratownicy.
+    // Rysujemy kratownicę jako prostokąt z zachowaniem proporcji:
+    // - Skala: svgWidth / gridLength (px/m)
+    // - Wysokość kratownicy: (gridWidth / 1000) * scale
+    // Urządzenia umieszczamy 5px poniżej kratownicy, a każda grupa (typu urządzenia) jest wycentrowana
+    // względem całej szerokości SVG.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
@@ -375,10 +385,10 @@
       
       // Skala: piksele na metr (dla długości kratownicy)
       const scale = svgWidth / gridLength;
-      // Obliczamy wysokość prostokąta kratownicy (przeliczając mm na m)
+      // Obliczamy wysokość kratownicy (przeliczając mm na m)
       const rectHeight = (gridWidth / 1000) * scale;
       
-      // Ustalamy pozycję kratownicy (od 20px od góry)
+      // Pozycja kratownicy – rysujemy prostokąt od 20px od góry
       const rectY = 20;
       const trussRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       trussRect.setAttribute("x", "0");
@@ -390,8 +400,8 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Pozycja urządzeń – 5px poniżej kratownicy
-      const devicesY = rectY + rectHeight + 5;
+      // Urządzenia umieszczamy 5px poniżej kratownicy + dodatkowy offset (tutaj 20px), czyli razem 25px poniżej
+      const devicesY = rectY + rectHeight + 25;
       const centerX = svgWidth / 2;
       
       // Grupujemy urządzenia wg typu – każda grupa dotyczy jednego urządzenia (typu)
@@ -415,11 +425,11 @@
         }
       });
       
-      // Dla każdej grupy urządzeń (każdy typ) rysujemy niezależnie – każda grupa jest wycentrowana względem całej szerokości kratownicy.
+      if (groups.length === 0) return;
+      
+      // Każda grupa jest wycentrowana względem całej szerokości SVG (niezależnie od innych)
       groups.forEach(group => {
-        // Obliczamy xStart, aby grupa była wycentrowana na całej szerokości SVG
         let xStart = centerX - (group.groupWidth / 2);
-        // Rysujemy każdy egzemplarz w grupie
         for (let i = 0; i < group.qty; i++) {
           const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
           devRect.setAttribute("x", xStart);
