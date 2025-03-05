@@ -15,7 +15,7 @@
     body {
       font-size: 14px;
       font-family: Arial, sans-serif;
-      background: url('/Wlodi-ile-nog/images/4.jpg') no-repeat center center fixed;
+      background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
       background-size: cover;
       color: #ffffff;
       text-align: center;
@@ -177,19 +177,13 @@
 
     function saveState() {
       const state = {
-        devices: devices.map(device => {
-          const quantityInput = document.getElementById('quantity-' + device.id);
-          const checkbox = document.getElementById('device-' + device.id);
-          const intervalInput = document.getElementById('interval-' + device.id);
-          const centerCheckbox = document.getElementById('center-align-' + device.id);
-          return {
-            id: device.id,
-            quantity: quantityInput ? +quantityInput.value : 0,
-            isChecked: checkbox ? checkbox.checked : true,
-            interval: intervalInput ? +intervalInput.value : 1.0,
-            centerAlign: centerCheckbox ? centerCheckbox.checked : false
-          };
-        }),
+        devices: devices.map(device => ({
+          id: device.id,
+          quantity: device.quantity !== undefined ? device.quantity : 0,
+          isChecked: device.isChecked !== undefined ? device.isChecked : true,
+          interval: device.interval !== undefined ? device.interval : 1.0,
+          centerAlign: device.centerAlign || false
+        })),
         availableDevicesIds: availableDevices.map(device => device.id),
         gridLength: gridLength,
         gridWidth: gridWidth
@@ -204,6 +198,10 @@
       state.devices.forEach(savedDevice => {
         const device = allDevices.find(d => d.id === savedDevice.id);
         if (device && !devices.find(d => d.id === device.id)) {
+          // przypisujemy zapisane wartości do obiektu urządzenia
+          device.quantity = savedDevice.quantity;
+          device.isChecked = savedDevice.isChecked;
+          device.interval = savedDevice.interval;
           device.centerAlign = savedDevice.centerAlign;
           devices.push(device);
         }
@@ -221,16 +219,6 @@
       }
       renderDeviceList();
       populateDeviceSelection();
-      state.devices.forEach(savedDevice => {
-        const quantityInput = document.getElementById('quantity-' + savedDevice.id);
-        const checkbox = document.getElementById('device-' + savedDevice.id);
-        const intervalInput = document.getElementById('interval-' + savedDevice.id);
-        const centerCheckbox = document.getElementById('center-align-' + savedDevice.id);
-        if (quantityInput) quantityInput.value = savedDevice.quantity;
-        if (checkbox) checkbox.checked = savedDevice.isChecked;
-        if (intervalInput) intervalInput.value = savedDevice.interval;
-        if (centerCheckbox) centerCheckbox.checked = savedDevice.centerAlign;
-      });
       calculateEnergy();
     }
 
@@ -267,8 +255,13 @@
       checkbox.type = 'checkbox';
       checkbox.value = device.pobor;
       checkbox.id = 'device-' + device.id;
-      checkbox.checked = true;
-      checkbox.addEventListener('change', () => { calculateEnergy(); saveState(); });
+      // Używamy zapisanej wartości lub domyślnie true
+      checkbox.checked = device.isChecked !== undefined ? device.isChecked : true;
+      checkbox.addEventListener('change', () => { 
+        device.isChecked = checkbox.checked;
+        calculateEnergy(); 
+        saveState(); 
+      });
       const label = document.createElement('label');
       label.textContent = `${device.nazwa} (${device.pobor} W)`;
       labelContainer.appendChild(checkbox);
@@ -279,7 +272,7 @@
       const centerAlignCheckbox = document.createElement('input');
       centerAlignCheckbox.type = 'checkbox';
       centerAlignCheckbox.id = 'center-align-' + device.id;
-      centerAlignCheckbox.checked = device.centerAlign || false;
+      centerAlignCheckbox.checked = device.centerAlign !== undefined ? device.centerAlign : false;
       centerAlignCheckbox.addEventListener('change', () => {
         device.centerAlign = centerAlignCheckbox.checked;
         calculateEnergy();
@@ -297,25 +290,36 @@
       minusButton.classList.add('quantity-button');
       minusButton.onclick = function () {
         let input = document.getElementById('quantity-' + device.id);
-        if (+input.value > 0) {
-          input.value = +input.value - 1;
+        let currentValue = parseInt(input.value) || 0;
+        if (currentValue > 0) {
+          currentValue--;
+          input.value = currentValue;
+          device.quantity = currentValue;
           calculateEnergy();
           saveState();
         }
       };
       const quantityInput = document.createElement('input');
       quantityInput.type = 'number';
-      quantityInput.value = 0;
+      // Używamy zapisanej ilości lub domyślnie 0
+      quantityInput.value = device.quantity !== undefined ? device.quantity : 0;
       quantityInput.min = 0;
       quantityInput.id = 'quantity-' + device.id;
       quantityInput.classList.add('quantity-input');
-      quantityInput.oninput = function () { calculateEnergy(); saveState(); };
+      quantityInput.oninput = function () { 
+        device.quantity = parseInt(quantityInput.value) || 0;
+        calculateEnergy();
+        saveState();
+      };
       const plusButton = document.createElement('button');
       plusButton.textContent = "+";
       plusButton.classList.add('quantity-button');
       plusButton.onclick = function () {
         let input = document.getElementById('quantity-' + device.id);
-        input.value = +input.value + 1;
+        let currentValue = parseInt(input.value) || 0;
+        currentValue++;
+        input.value = currentValue;
+        device.quantity = currentValue;
         calculateEnergy();
         saveState();
       };
@@ -335,18 +339,24 @@
           val = (val - 0.1).toFixed(1);
           if(val < 0) val = 0;
           intervalInput.value = val;
+          device.interval = parseFloat(val);
           calculateEnergy();
           saveState();
         }
       };
       const intervalInput = document.createElement('input');
       intervalInput.type = 'number';
-      intervalInput.value = 1.0;
+      // Używamy zapisanej wartości interwału lub domyślnie 1.0
+      intervalInput.value = device.interval !== undefined ? device.interval : 1.0;
       intervalInput.min = 0;
       intervalInput.step = 0.1;
       intervalInput.id = 'interval-' + device.id;
       intervalInput.classList.add('quantity-input');
-      intervalInput.oninput = function () { calculateEnergy(); saveState(); };
+      intervalInput.oninput = function () { 
+        device.interval = parseFloat(intervalInput.value) || 1.0;
+        calculateEnergy();
+        saveState();
+      };
       const plusIntervalButton = document.createElement('button');
       plusIntervalButton.textContent = "+";
       plusIntervalButton.classList.add('quantity-button');
@@ -355,6 +365,7 @@
         let val = parseFloat(intervalInputElem.value) || 0;
         val = (val + 0.1).toFixed(1);
         intervalInputElem.value = val;
+        device.interval = parseFloat(val);
         calculateEnergy();
         saveState();
       };
@@ -369,13 +380,17 @@
       document.getElementById('device-list').appendChild(container);
     }
 
-    // Dodawanie urządzenia – nie nadpisujemy poprzednich
     function addSelectedDevice() {
       const select = document.getElementById('device-select');
       const selectedId = parseInt(select.value);
       const selectedDevice = availableDevices.find(d => d.id === selectedId);
       if (!selectedDevice) return;
       if (!devices.find(d => d.id === selectedId)) {
+        // Przy dodawaniu, jeśli urządzenie nie miało wcześniej zapisanych wartości, ustawiamy je na domyślne
+        selectedDevice.quantity = 0;
+        selectedDevice.interval = 1.0;
+        selectedDevice.isChecked = true;
+        selectedDevice.centerAlign = false;
         devices.push(selectedDevice);
       }
       const index = availableDevices.findIndex(d => d.id === selectedId);
@@ -388,19 +403,19 @@
       saveState();
     }
 
-    // Nowa wersja aktualizacji wizualizacji – wykorzystujemy osobne grupy SVG
+    // Aktualizacja wizualizacji – podział na warstwy dla kratownicy i urządzeń
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       const svgWidth = svg.clientWidth;
       
-      // Sprawdzamy i tworzymy grupę dla kratownicy, jeśli nie istnieje
+      // Grupa kratownicy
       let gridGroup = document.getElementById('grid-group');
       if (!gridGroup) {
         gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
         gridGroup.setAttribute("id", "grid-group");
         svg.appendChild(gridGroup);
       }
-      // Tworzymy lub pobieramy grupę urządzeń
+      // Grupa urządzeń
       let devicesGroup = document.getElementById('devices-group');
       if (!devicesGroup) {
         devicesGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -408,7 +423,7 @@
         svg.appendChild(devicesGroup);
       }
       
-      // Aktualizujemy kratownicę – wyczyszczamy tylko gridGroup
+      // Aktualizacja kratownicy – czyścimy tylko gridGroup
       while (gridGroup.firstChild) { gridGroup.removeChild(gridGroup.firstChild); }
       const scale = svgWidth / gridLength;
       const rectHeight = (gridWidth / 1000) * scale;
@@ -423,33 +438,26 @@
       trussRect.setAttribute("stroke-width", "2");
       gridGroup.appendChild(trussRect);
       
-      // Rysujemy urządzenia – wyczyszczamy tylko devicesGroup
+      // Aktualizacja urządzeń – czyścimy tylko devicesGroup
       while (devicesGroup.firstChild) { devicesGroup.removeChild(devicesGroup.firstChild); }
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       let groups = [];
       devices.forEach(device => {
-        const checkbox = document.getElementById('device-' + device.id);
-        const quantityInput = document.getElementById('quantity-' + device.id);
-        const intervalInput = document.getElementById('interval-' + device.id);
-        if (checkbox && checkbox.checked && quantityInput && intervalInput) {
-          const qty = parseInt(quantityInput.value) || 0;
-          if (qty > 0) {
-            const intervalM = parseFloat(intervalInput.value) || 0;
-            const devWidthM = device.szer * 0.01;
-            const devWidthPx = devWidthM * scale;
-            let devHeightPx = device.wys * 0.01 * scale;
-            const centerCheckbox = document.getElementById('center-align-' + device.id);
-            const centerAlign = centerCheckbox ? centerCheckbox.checked : false;
-            device.centerAlign = centerAlign;
-            let groupWidth;
-            if (centerAlign) {
-              groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
-            } else {
-              groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
-            }
-            groups.push({ device, qty, intervalM, groupWidth, devWidthPx, devHeightPx });
+        // Pobieramy dane z DOM (wartości zostały zapisane do obiektu przy zmianie)
+        const qty = device.quantity || 0;
+        const intervalM = device.interval || 1.0;
+        if (device.isChecked && qty > 0) {
+          const devWidthM = device.szer * 0.01;
+          const devWidthPx = devWidthM * scale;
+          const devHeightPx = device.wys * 0.01 * scale;
+          let groupWidth;
+          if (device.centerAlign) {
+            groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
+          } else {
+            groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
           }
+          groups.push({ device, qty, intervalM, groupWidth, devWidthPx, devHeightPx });
         }
       });
       
@@ -566,11 +574,8 @@
     function calculateEnergy() {
       let totalPower = 0;
       devices.forEach(device => {
-        const checkbox = document.getElementById('device-' + device.id);
-        const quantityInput = document.getElementById('quantity-' + device.id);
-        if (checkbox && checkbox.checked && quantityInput) {
-          const qty = parseInt(quantityInput.value) || 0;
-          totalPower += device.pobor * qty;
+        if (device.isChecked && device.quantity) {
+          totalPower += device.pobor * device.quantity;
         }
       });
       document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
