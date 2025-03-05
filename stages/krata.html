@@ -1,1 +1,141 @@
 
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rozmieszczenie urządzeń</title>
+    <style>
+        :root {
+            --container-bg: rgba(30, 30, 30, 0.85);
+            --button-bg: #FF9800;
+            --button-hover: #E68900;
+            --input-width: 30px;
+            --button-size: 10px;
+        }
+
+        body {
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #ffffff;
+            text-align: center;
+            margin: 20px;
+        }
+
+        .container {
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            text-align: left;
+            width: 90%;
+            max-width: 300px;
+            margin: auto;
+        }
+
+        .button {
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            width: 50%;
+            max-width: 250px;
+        }
+
+        .button:hover {
+            background-color: var(--button-hover);
+        }
+
+        .quantity-button {
+            background-color: #666;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: var(--button-size);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Konfiguracja kraty</h2>
+        <label for="gridLength">Długość kraty (m):</label>
+        <button onclick="changeGridLength(-0.25)" class="quantity-button">-</button>
+        <span id="gridLengthDisplay">12</span> m
+        <button onclick="changeGridLength(0.25)" class="quantity-button">+</button>
+        <input type="hidden" id="gridLength" value="12">
+
+        <h2>Dodawanie urządzeń</h2>
+        <select id="deviceSelect"></select>
+        <button onclick="addDevice()" class="button">Dodaj urządzenie</button>
+        <button onclick="generateGrid()" class="button">Rozmieść urządzenia</button>
+
+        <h2>Podgląd rozmieszczenia</h2>
+        <div id="grid-container" class="container"></div>
+    </div>
+
+    <script>
+        let devices = [];
+
+        function changeGridLength(value) {
+            let gridLengthElem = document.getElementById("gridLength");
+            let gridLengthDisplay = document.getElementById("gridLengthDisplay");
+            let newValue = parseFloat(gridLengthElem.value) + value;
+            if (newValue >= 1) { 
+                gridLengthElem.value = newValue.toFixed(2);
+                gridLengthDisplay.textContent = newValue.toFixed(2);
+            }
+        }
+
+        function loadDevices() {
+            fetch('/Wlodi-ile-nog/data/devices.json')
+                .then(response => response.json())
+                .then(data => {
+                    devices = data;
+                    let deviceSelect = document.getElementById("deviceSelect");
+                    deviceSelect.innerHTML = "";
+                    devices.forEach(device => {
+                        let option = document.createElement("option");
+                        option.value = JSON.stringify(device);
+                        option.textContent = `${device.nazwa} (${device.pobor} W)`;
+                        deviceSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error("Błąd ładowania danych: ", error));
+        }
+
+        function addDevice() {
+            let deviceSelect = document.getElementById("deviceSelect");
+            let selectedDevice = JSON.parse(deviceSelect.value);
+            if (!selectedDevice) return;
+            
+            let gridContainer = document.getElementById("grid-container");
+            let newDevice = document.createElement("div");
+            newDevice.textContent = `${selectedDevice.nazwa} (${selectedDevice.pobor} W)`;
+            newDevice.style.backgroundColor = "lightblue";
+            newDevice.style.margin = "5px";
+            newDevice.style.padding = "10px";
+            newDevice.style.borderRadius = "5px";
+            gridContainer.appendChild(newDevice);
+        }
+
+        function generateGrid() {
+            let gridContainer = document.getElementById("grid-container");
+            gridContainer.innerHTML = "";
+            let gridLength = parseFloat(document.getElementById("gridLength").value) * 100;
+            gridContainer.style.width = gridLength + "px";
+            gridContainer.style.border = "1px solid white";
+            gridContainer.style.height = "50px";
+        }
+
+        window.onload = loadDevices;
+    </script>
+</body>
+</html>
