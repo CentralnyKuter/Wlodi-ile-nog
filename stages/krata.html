@@ -1,198 +1,416 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rozmieszczenie urządzeń</title>
-    <style>
-        :root {
-            --container-bg: rgba(30, 30, 30, 0.85);
-            --button-bg: #FF9800;
-            --button-hover: #E68900;
-            --input-width: 30px;
-            --button-size: 10px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator Poboru Energii</title>
+  <style>
+    :root {
+      --container-bg: rgba(30, 30, 30, 0.85);
+      --button-bg: #FF9800;
+      --button-hover: #E68900;
+      --input-width: 30px;
+      --button-size: 10px;
+    }
 
-        body {
-            font-size: 12px;
-            font-family: Arial, sans-serif;
-            background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
-            background-size: cover;
-            color: #ffffff;
-            text-align: center;
-            margin: 20px;
-        }
+    body {
+      font-size: 12px;
+      font-family: Arial, sans-serif;
+      background: url('/Wlodi-ile-nog/images/2.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #ffffff;
+      text-align: center;
+      margin: 20px;
+    }
 
-        .container {
-            background: var(--container-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            text-align: left;
-            width: 90%;
-            max-width: 300px;
-            margin: auto;
-        }
+    .container {
+      background: var(--container-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      text-align: left;
+      width: 90%;
+      max-width: 300px;
+      margin: auto;
+    }
 
-        .button {
-            background-color: var(--button-bg);
-            color: white;
-            border: none;
-            padding: 10px;
-            margin-top: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1em;
-            width: auto;
-            min-width: 40px;
-            max-width: 250px;
-            border-radius: 5px;
-        }
+    .button {
+      background-color: var(--button-bg);
+      color: white;
+      border: none;
+      padding: 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1em;
+      width: 50%;
+      max-width: 250px;
+    }
 
-        .button:hover {
-            background-color: var(--button-hover);
-        }
+    .button:hover {
+      background-color: var(--button-hover);
+    }
 
-        .device-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px 0;
-        }
+    .device-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+    }
 
-        .device-label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1em;
-        }
+    .device-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1em;
+    }
 
-        .quantity-controls {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
+    .quantity-controls {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
 
-        .quantity-button {
-            background-color: #666;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-size: var(--button-size);
-            border-radius: 5px;
-        }
+    .quantity-button {
+      background-color: #666;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: var(--button-size);
+      border-radius: 5px;
+    }
 
-        .quantity-input {
-            width: var(--input-width);
-            text-align: center;
-            -moz-appearance: textfield;
-        }
+    .quantity-input {
+      width: var(--input-width);
+      text-align: center;
+      -moz-appearance: textfield;
+    }
 
-        .quantity-input::-webkit-outer-spin-button,
-        .quantity-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-    </style>
+    .quantity-input::-webkit-outer-spin-button,
+    .quantity-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    /* Nowy styl kontenera dla długości kraty */
+    .grid-length-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+    }
+    
+    .grid-length-label {
+      font-size: 1em;
+      margin-right: 10px;
+      flex: 1;
+    }
+
+    @media (max-width: 200px) {
+      .container {
+        width: 95%;
+      }
+      .button {
+        padding: 12px;
+        font-size: 1em;
+        max-width: none;
+      }
+      .quantity-input {
+        width: 45px;
+      }
+      .device-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .grid-length-container {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Konfiguracja kraty</h2>
-        <label for="gridLength">Długość kraty (m):</label>
-        <button onclick="changeGridLength(-0.25)" class="quantity-button">-</button>
-        <span id="gridLengthDisplay">12</span> m
-        <button onclick="changeGridLength(0.25)" class="quantity-button">+</button>
-        <input type="hidden" id="gridLength" value="12">
+  <div class="container">
+    <h2>Choose your weapon !</h2>
 
-        <h2>Dodawanie urządzeń</h2>
-        <select id="deviceSelect"></select>
-        <div class="quantity-controls">
-            <button onclick="adjustQuantity(-1)" class="quantity-button">-</button>
-            <input type="number" id="deviceQuantity" min="1" value="1" class="quantity-input">
-            <button onclick="adjustQuantity(1)" class="quantity-button">+</button>
-        </div>
-        <button onclick="addDevice()" class="button">Dodaj urządzenie</button>
-
-        <h2>Wybrane urządzenia</h2>
-        <div id="device-list"></div>
+    <!-- Nowa sekcja do ustawiania długości kraty -->
+    <div class="grid-length-container">
+      <div class="grid-length-label">Długość kraty (m):</div>
+      <div class="quantity-controls">
+        <button class="quantity-button" id="grid-length-minus">−</button>
+        <input 
+          type="number" 
+          id="grid-length-input" 
+          class="quantity-input" 
+          step="0.25"
+          value="12" 
+          min="0" 
+          style="width: 50px;" 
+        />
+        <button class="quantity-button" id="grid-length-plus">+</button>
+      </div>
     </div>
+    <!-- / Nowa sekcja do ustawiania długości kraty -->
 
-    <script>
-        let devices = [];
-        let selectedDevices = [];
+    <div id="device-list"></div>
+    <select id="device-select"></select>
+    <button class="button" onclick="addSelectedDevice()">Dodaj urządzenie</button>
+    <button class="button" onclick="clearAll()">Clear all</button>
+    <h3 id="total-energy">Całkowity pobór: 0 W</h3>
+  </div>
 
-        function changeGridLength(value) {
-            let gridLengthElem = document.getElementById("gridLength");
-            let gridLengthDisplay = document.getElementById("gridLengthDisplay");
-            let newValue = parseFloat(gridLengthElem.value) + value;
-            if (newValue >= 1) { 
-                gridLengthElem.value = newValue.toFixed(2);
-                gridLengthDisplay.textContent = newValue.toFixed(2);
+  <script>
+    let devices = [];
+    let availableDevices = [];
+    let allDevices = [];
+
+    // Nowa zmienna dla długości kraty (m)
+    let gridLength = 12;
+
+    // Zapis stanu do localStorage
+    function saveState() {
+      const state = {
+        devices: devices.map(device => {
+          const quantityInput = document.getElementById('quantity-' + device.id);
+          const checkbox = document.getElementById('device-' + device.id);
+          return {
+            id: device.id,
+            quantity: quantityInput ? quantityInput.value : 0,
+            isChecked: checkbox ? checkbox.checked : true
+          };
+        }),
+        availableDevicesIds: availableDevices.map(device => device.id),
+        // Zapisujemy również długość kraty
+        gridLength: gridLength
+      };
+      localStorage.setItem('deviceState', JSON.stringify(state));
+    }
+
+    // Odtwarzanie stanu z localStorage
+    function restoreState() {
+      const savedState = localStorage.getItem('deviceState');
+      if (savedState) {
+        const state = JSON.parse(savedState);
+
+        // Przywracanie urządzeń
+        state.devices.forEach(savedDevice => {
+          const device = allDevices.find(d => d.id === savedDevice.id);
+          if (device) {
+            if (!devices.find(d => d.id === device.id)) {
+              addDeviceToList(device);
+              devices.push(device);
             }
-        }
-
-        function adjustQuantity(value) {
-            let quantityInput = document.getElementById("deviceQuantity");
-            let newValue = parseInt(quantityInput.value) + value;
-            if (newValue >= 1) {
-                quantityInput.value = newValue;
+            const quantityInput = document.getElementById('quantity-' + device.id);
+            const checkbox = document.getElementById('device-' + device.id);
+            if (quantityInput) {
+              quantityInput.value = savedDevice.quantity;
             }
+            if (checkbox) {
+              checkbox.checked = savedDevice.isChecked;
+            }
+          }
+        });
+
+        // Przywracanie listy dostępnych urządzeń
+        if(state.availableDevicesIds) {
+          availableDevices = allDevices.filter(d => state.availableDevicesIds.indexOf(d.id) !== -1);
         }
 
-        function loadDevices() {
-            fetch('/Wlodi-ile-nog/data/devices.json')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Błąd sieci lub plik devices.json jest niedostępny");
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (!data || data.length === 0) {
-                        throw new Error("Plik devices.json jest pusty lub niepoprawny");
-                    }
-                    devices = data;
-                    let deviceSelect = document.getElementById("deviceSelect");
-                    deviceSelect.innerHTML = "";
-                    devices.forEach(device => {
-                        let option = document.createElement("option");
-                        option.value = JSON.stringify(device);
-                        option.textContent = `${device.nazwa} (${device.pobor} W)`;
-                        deviceSelect.appendChild(option);
-                    });
-                })
-                .catch(error => console.error("Błąd ładowania danych: ", error));
+        // Przywracanie długości kraty
+        if (typeof state.gridLength === 'number') {
+          gridLength = state.gridLength;
+          document.getElementById('grid-length-input').value = gridLength;
         }
 
-        function addDevice() {
-            let deviceSelect = document.getElementById("deviceSelect");
-            let selectedDevice = JSON.parse(deviceSelect.value);
-            let quantity = parseInt(document.getElementById("deviceQuantity").value);
-            if (!selectedDevice || quantity < 1) return;
-            
-            selectedDevices.push({ ...selectedDevice, quantity });
-            renderSelectedDevices();
-        }
+        populateDeviceSelection();
+        calculateEnergy();
+      }
+    }
 
-        function renderSelectedDevices() {
-            let listContainer = document.getElementById("device-list");
-            listContainer.innerHTML = "";
-            selectedDevices.forEach((device, index) => {
-                let deviceDiv = document.createElement("div");
-                deviceDiv.classList.add("device-container");
-                deviceDiv.innerHTML = `${device.nazwa} - ${device.quantity} szt. (${device.pobor * device.quantity} W) ` +
-                    `<button onclick="removeDevice(${index})" class="button">Usuń</button>`;
-                listContainer.appendChild(deviceDiv);
-            });
-        }
+    function populateDeviceSelection() {
+      const select = document.getElementById('device-select');
+      select.innerHTML = '';
 
-        function removeDevice(index) {
-            selectedDevices.splice(index, 1);
-            renderSelectedDevices();
-        }
+      if (availableDevices.length === 0) {
+        select.style.display = 'none';
+        return;
+      } else {
+        select.style.display = 'inline-block';
+      }
 
-        window.onload = loadDevices;
-    </script>
+      availableDevices.forEach(device => {
+        const option = document.createElement('option');
+        option.value = device.id;
+        option.textContent = device.nazwa;
+        select.appendChild(option);
+      });
+    }
+
+    function renderDeviceList() {
+      const listDiv = document.getElementById('device-list');
+      listDiv.innerHTML = '';
+      devices.forEach(device => addDeviceToList(device));
+    }
+
+    function addDeviceToList(device) {
+      const container = document.createElement('div');
+      container.classList.add('device-container');
+
+      const labelContainer = document.createElement('div');
+      labelContainer.classList.add('device-label');
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = device.pobor;
+      checkbox.id = 'device-' + device.id;
+      checkbox.checked = true;
+      checkbox.addEventListener('change', () => {
+        calculateEnergy();
+        saveState();
+      });
+
+      const label = document.createElement('label');
+      label.textContent = `${device.nazwa} (${device.pobor} W)`;
+
+      const quantityContainer = document.createElement('div');
+      quantityContainer.classList.add('quantity-controls');
+
+      const minusButton = document.createElement('button');
+      minusButton.textContent = "−";
+      minusButton.classList.add('quantity-button');
+      minusButton.onclick = function () {
+        let input = document.getElementById('quantity-' + device.id);
+        if (input.value > 0) {
+          input.value--;
+          calculateEnergy();
+          saveState();
+        }
+      };
+
+      const quantityInput = document.createElement('input');
+      quantityInput.type = 'number';
+      quantityInput.value = 0; // Domyślna wartość
+      quantityInput.min = 0;
+      quantityInput.id = 'quantity-' + device.id;
+      quantityInput.classList.add('quantity-input');
+      quantityInput.oninput = function () {
+        calculateEnergy();
+        saveState();
+      };
+
+      const plusButton = document.createElement('button');
+      plusButton.textContent = "+";
+      plusButton.classList.add('quantity-button');
+      plusButton.onclick = function () {
+        let input = document.getElementById('quantity-' + device.id);
+        input.value++;
+        calculateEnergy();
+        saveState();
+      };
+
+      labelContainer.appendChild(checkbox);
+      labelContainer.appendChild(label);
+      quantityContainer.appendChild(minusButton);
+      quantityContainer.appendChild(quantityInput);
+      quantityContainer.appendChild(plusButton);
+
+      container.appendChild(labelContainer);
+      container.appendChild(quantityContainer);
+      document.getElementById('device-list').appendChild(container);
+    }
+
+    function addSelectedDevice() {
+      const select = document.getElementById('device-select');
+      const selectedId = select.value;
+      const selectedDevice = availableDevices.find(d => d.id == selectedId);
+      if (!selectedDevice) return;
+
+      addDeviceToList(selectedDevice);
+      availableDevices = availableDevices.filter(d => d.id != selectedId);
+      devices.push(selectedDevice);
+      
+      populateDeviceSelection();
+      calculateEnergy();
+      saveState();
+    }
+
+    // Funkcja wyliczająca pobór energii w czasie rzeczywistym
+    function calculateEnergy() {
+      let totalPower = 0;
+      devices.forEach(device => {
+        const checkbox = document.getElementById('device-' + device.id);
+        const quantityInput = document.getElementById('quantity-' + device.id);
+        if (checkbox && checkbox.checked && quantityInput) {
+          totalPower += parseInt(device.pobor) * parseInt(quantityInput.value);
+        }
+      });
+      document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
+    }
+
+    // Funkcja czyszcząca stan aplikacji i localStorage
+    function clearAll() {
+      localStorage.removeItem('deviceState');
+      if (allDevices.length > 0) {
+        devices = allDevices.slice(0, 5);
+        availableDevices = allDevices.slice(5);
+      } else {
+        devices = [];
+        availableDevices = [];
+      }
+      // Przywracamy domyślną długość kraty
+      gridLength = 12;
+      document.getElementById('grid-length-input').value = gridLength;
+
+      renderDeviceList();
+      populateDeviceSelection();
+      calculateEnergy();
+    }
+
+    // Obsługa przycisków dla długości kraty
+    function initGridLengthControls() {
+      const minusBtn = document.getElementById('grid-length-minus');
+      const plusBtn = document.getElementById('grid-length-plus');
+      const lengthInput = document.getElementById('grid-length-input');
+
+      minusBtn.addEventListener('click', () => {
+        let currentValue = parseFloat(lengthInput.value);
+        if (currentValue > 0) {
+          currentValue = (currentValue - 0.25).toFixed(2);
+          lengthInput.value = currentValue < 0 ? 0 : currentValue;
+          gridLength = parseFloat(lengthInput.value);
+          saveState();
+        }
+      });
+
+      plusBtn.addEventListener('click', () => {
+        let currentValue = parseFloat(lengthInput.value);
+        currentValue = (currentValue + 0.25).toFixed(2);
+        lengthInput.value = currentValue;
+        gridLength = parseFloat(lengthInput.value);
+        saveState();
+      });
+
+      lengthInput.addEventListener('input', () => {
+        gridLength = parseFloat(lengthInput.value) || 0;
+        saveState();
+      });
+    }
+
+    window.onload = function() {
+      fetch('/Wlodi-ile-nog/data/devices.json')
+        .then(response => response.json())
+        .then(data => {
+          allDevices = data;
+          devices = data.slice(0, 5);
+          availableDevices = data.slice(5);
+          renderDeviceList();
+          populateDeviceSelection();
+          initGridLengthControls(); // Inicjujemy obsługę kraty
+          restoreState();
+        })
+        .catch(error => console.error("Błąd ładowania danych:", error));
+    };
+  </script>
 </body>
 </html>
