@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Kalkulator Poboru Energii</title>
   <style>
     :root {
@@ -30,8 +30,9 @@
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
       text-align: left;
       width: 90%;
-      max-width: 300px;
+      max-width: 350px;
       margin: auto;
+      margin-bottom: 20px;
     }
 
     .button {
@@ -93,18 +94,30 @@
       margin: 0;
     }
 
-    /* Nowy styl kontenera dla długości kraty */
     .grid-length-container {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 10px 0;
     }
-    
     .grid-length-label {
       font-size: 1em;
       margin-right: 10px;
       flex: 1;
+    }
+
+    /* Kontener na wizualizację kraty */
+    .visualization-container {
+      width: 90%;
+      max-width: 700px;
+      margin: 20px auto;
+      background: rgba(0,0,0,0.4);
+      padding: 10px;
+      border-radius: 6px;
+    }
+    .visualization-container h3 {
+      text-align: center;
+      margin: 0 0 10px 0;
     }
 
     @media (max-width: 200px) {
@@ -132,9 +145,9 @@
 </head>
 <body>
   <div class="container">
-    <h2>Choose your weapon !</h2>
+    <h2>Choose your weapon!</h2>
 
-    <!-- Nowa sekcja do ustawiania długości kraty -->
+    <!-- Sekcja do ustawiania długości kraty -->
     <div class="grid-length-container">
       <div class="grid-length-label">Długość kraty (m):</div>
       <div class="quantity-controls">
@@ -151,13 +164,20 @@
         <button class="quantity-button" id="grid-length-plus">+</button>
       </div>
     </div>
-    <!-- / Nowa sekcja do ustawiania długości kraty -->
 
     <div id="device-list"></div>
+
     <select id="device-select"></select>
     <button class="button" onclick="addSelectedDevice()">Dodaj urządzenie</button>
     <button class="button" onclick="clearAll()">Clear all</button>
     <h3 id="total-energy">Całkowity pobór: 0 W</h3>
+  </div>
+
+  <!-- Kontener na naszą wizualizację -->
+  <div class="visualization-container">
+    <h3>Wizualizacja rozmieszczenia</h3>
+    <!-- SVG, w którym będziemy rysować kratę i urządzenia -->
+    <svg id="truss-visualization" width="600" height="100" style="border:1px solid #fff;"></svg>
   </div>
 
   <script>
@@ -165,7 +185,7 @@
     let availableDevices = [];
     let allDevices = [];
 
-    // Nowa zmienna dla długości kraty (m)
+    // Domyślnie 12m
     let gridLength = 12;
 
     // Zapis stanu do localStorage
@@ -181,7 +201,6 @@
           };
         }),
         availableDevicesIds: availableDevices.map(device => device.id),
-        // Zapisujemy również długość kraty
         gridLength: gridLength
       };
       localStorage.setItem('deviceState', JSON.stringify(state));
@@ -197,6 +216,7 @@
         state.devices.forEach(savedDevice => {
           const device = allDevices.find(d => d.id === savedDevice.id);
           if (device) {
+            // jeśli w devices nie ma tego urządzenia, to je dodajemy
             if (!devices.find(d => d.id === device.id)) {
               addDeviceToList(device);
               devices.push(device);
@@ -253,6 +273,7 @@
       devices.forEach(device => addDeviceToList(device));
     }
 
+    // Dodaje pojedynczy "blok" urządzenia do listy
     function addDeviceToList(device) {
       const container = document.createElement('div');
       container.classList.add('device-container');
@@ -320,6 +341,7 @@
       document.getElementById('device-list').appendChild(container);
     }
 
+    // Dodaje urządzenie (z selecta) do listy wybranych
     function addSelectedDevice() {
       const select = document.getElementById('device-select');
       const selectedId = select.value;
@@ -335,17 +357,105 @@
       saveState();
     }
 
-    // Funkcja wyliczająca pobór energii w czasie rzeczywistym
+    // Funkcja wyliczająca pobór energii i aktualizująca wizualizację
     function calculateEnergy() {
       let totalPower = 0;
       devices.forEach(device => {
         const checkbox = document.getElementById('device-' + device.id);
         const quantityInput = document.getElementById('quantity-' + device.id);
         if (checkbox && checkbox.checked && quantityInput) {
-          totalPower += parseInt(device.pobor) * parseInt(quantityInput.value);
+          const qty = parseInt(quantityInput.value);
+          totalPower += parseInt(device.pobor) * qty;
         }
       });
       document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
+
+      updateTrussVisualization();
+    }
+
+    // Wizualizacja na kracie (w SVG)
+    function updateTrussVisualization() {
+      const svg = document.getElementById('truss-visualization');
+      // Czyścimy poprzednie elementy
+      while (svg.firstChild) {
+        svg.removeChild(svg.firstChild);
+      }
+
+      // Wymiary SVG
+      const svgWidth = svg.clientWidth;  // np. 600
+      const svgHeight = svg.clientHeight; // np. 100
+
+      // skala w px/m
+      const scale = svgWidth / gridLength; 
+
+      // Zbierz wszystkie obiekty (powtarzając je tyle razy, ile quantity)
+      let selectedItems = [];
+      devices.forEach(device => {
+        const checkbox = document.getElementById('device-' + device.id);
+        const quantityInput = document.getElementById('quantity-' + device.id);
+        if (checkbox && checkbox.checked && quantityInput) {
+          let qty = parseInt(quantityInput.value);
+          for (let i = 0; i < qty; i++) {
+            selectedItems.push(device);
+          }
+        }
+      });
+
+      // Jeśli nic nie wybrane, to nic nie rysujemy
+      if (selectedItems.length === 0) return;
+
+      // Każde urządzenie ma 'szer' = 40 cm = 0.4 m
+      // (jeśli w JSON jest 40 i interpretujemy to jako cm)
+      // Dla bezpieczeństwa przeliczmy:
+      const deviceWidthM = 0.01 * selectedItems[0].szer; // 40 * 0.01 => 0.4 m
+      // UWAGA: zakładamy, że wszystkie urządzenia mają taką samą szerokość (tak jest w JSON-ie)
+      
+      const deviceWidthPx = deviceWidthM * scale;
+
+      // Całkowita szerokość potrzebna w pikselach
+      const totalWidthPx = selectedItems.length * deviceWidthPx;
+
+      // Wyznaczamy xStart, żeby całość była wycentrowana w poziomie
+      const centerX = svgWidth / 2;
+      let xStart = centerX - (totalWidthPx / 2);
+
+      // Rysujemy "kratę" jako linię bazową (opcjonalnie)
+      // (np. linia z x=0 do x=svgWidth na środku wysokości)
+      const lineY = svgHeight / 2;
+      const trussLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      trussLine.setAttribute("x1", "0");
+      trussLine.setAttribute("y1", lineY);
+      trussLine.setAttribute("x2", svgWidth);
+      trussLine.setAttribute("y2", lineY);
+      trussLine.setAttribute("stroke", "#ccc");
+      trussLine.setAttribute("stroke-width", "2");
+      svg.appendChild(trussLine);
+
+      // Rysujemy prostokąty symbolizujące urządzenia (jeden za drugim)
+      selectedItems.forEach(device => {
+        // Utworzenie "rect"
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", xStart);
+        rect.setAttribute("y", lineY - 20); // np. 20px wyżej, by środek był na linii
+        rect.setAttribute("width", deviceWidthPx);
+        rect.setAttribute("height", 40);  // symboliczna wysokość
+        rect.setAttribute("fill", "orange"); // kolorek poglądowy
+
+        // Ewentualnie klasa CSS do stylowania, np. rect.classList.add("device-rect");
+        svg.appendChild(rect);
+
+        // Dodajemy napis (nazwa lub ID)
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", xStart + deviceWidthPx / 2);
+        label.setAttribute("y", lineY - 25);
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("font-size", "10");
+        label.setAttribute("fill", "#fff");
+        label.textContent = device.nazwa;
+        svg.appendChild(label);
+
+        xStart += deviceWidthPx;
+      });
     }
 
     // Funkcja czyszcząca stan aplikacji i localStorage
@@ -364,7 +474,7 @@
 
       renderDeviceList();
       populateDeviceSelection();
-      calculateEnergy();
+      calculateEnergy();  // to też wyczyści wizualizację
     }
 
     // Obsługa przycisków dla długości kraty
@@ -380,6 +490,7 @@
           lengthInput.value = currentValue < 0 ? 0 : currentValue;
           gridLength = parseFloat(lengthInput.value);
           saveState();
+          calculateEnergy();
         }
       });
 
@@ -389,25 +500,30 @@
         lengthInput.value = currentValue;
         gridLength = parseFloat(lengthInput.value);
         saveState();
+        calculateEnergy();
       });
 
       lengthInput.addEventListener('input', () => {
         gridLength = parseFloat(lengthInput.value) || 0;
         saveState();
+        calculateEnergy();
       });
     }
 
     window.onload = function() {
+      // Ładujemy dane z pliku JSON (zmień na swoją ścieżkę lub wstaw dane "ręcznie")
       fetch('/Wlodi-ile-nog/data/devices.json')
         .then(response => response.json())
         .then(data => {
           allDevices = data;
-          devices = data.slice(0, 5);
-          availableDevices = data.slice(5);
+          // Początkowo np. pierwsze 5 na liście w "devices", reszta w "availableDevices"
+          devices = allDevices.slice(0, 5);
+          availableDevices = allDevices.slice(5);
           renderDeviceList();
           populateDeviceSelection();
           initGridLengthControls(); // Inicjujemy obsługę kraty
-          restoreState();
+          restoreState();           // Przywracamy stan z localStorage (o ile istnieje)
+          calculateEnergy();        // Aktualizujemy (pobór + wizualizację)
         })
         .catch(error => console.error("Błąd ładowania danych:", error));
     };
