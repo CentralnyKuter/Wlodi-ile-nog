@@ -198,7 +198,6 @@
       state.devices.forEach(savedDevice => {
         const device = allDevices.find(d => d.id === savedDevice.id);
         if (device && !devices.find(d => d.id === device.id)) {
-          // przypisujemy zapisane wartości do obiektu urządzenia
           device.quantity = savedDevice.quantity;
           device.isChecked = savedDevice.isChecked;
           device.interval = savedDevice.interval;
@@ -255,7 +254,6 @@
       checkbox.type = 'checkbox';
       checkbox.value = device.pobor;
       checkbox.id = 'device-' + device.id;
-      // Używamy zapisanej wartości lub domyślnie true
       checkbox.checked = device.isChecked !== undefined ? device.isChecked : true;
       checkbox.addEventListener('change', () => { 
         device.isChecked = checkbox.checked;
@@ -301,7 +299,6 @@
       };
       const quantityInput = document.createElement('input');
       quantityInput.type = 'number';
-      // Używamy zapisanej ilości lub domyślnie 0
       quantityInput.value = device.quantity !== undefined ? device.quantity : 0;
       quantityInput.min = 0;
       quantityInput.id = 'quantity-' + device.id;
@@ -346,7 +343,6 @@
       };
       const intervalInput = document.createElement('input');
       intervalInput.type = 'number';
-      // Używamy zapisanej wartości interwału lub domyślnie 1.0
       intervalInput.value = device.interval !== undefined ? device.interval : 1.0;
       intervalInput.min = 0;
       intervalInput.step = 0.1;
@@ -386,7 +382,6 @@
       const selectedDevice = availableDevices.find(d => d.id === selectedId);
       if (!selectedDevice) return;
       if (!devices.find(d => d.id === selectedId)) {
-        // Przy dodawaniu, jeśli urządzenie nie miało wcześniej zapisanych wartości, ustawiamy je na domyślne
         selectedDevice.quantity = 0;
         selectedDevice.interval = 1.0;
         selectedDevice.isChecked = true;
@@ -403,7 +398,7 @@
       saveState();
     }
 
-    // Aktualizacja wizualizacji – podział na warstwy dla kratownicy i urządzeń
+    // Funkcja aktualizująca wizualizację – podział na warstwy dla kratownicy i urządzeń
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       const svgWidth = svg.clientWidth;
@@ -444,7 +439,6 @@
       const centerX = svgWidth / 2;
       let groups = [];
       devices.forEach(device => {
-        // Pobieramy dane z DOM (wartości zostały zapisane do obiektu przy zmianie)
         const qty = device.quantity || 0;
         const intervalM = device.interval || 1.0;
         if (device.isChecked && qty > 0) {
@@ -464,6 +458,8 @@
       if (groups.length === 0) return;
       
       groups.forEach(group => {
+        // Obliczamy font-size na podstawie wysokości urządzenia
+        const fontSize = group.devHeightPx / 3;
         if (group.device.centerAlign) {
           for (let i = 0; i < group.qty; i++) {
             const centerPos = centerX - ((group.qty - 1) * (group.intervalM * scale)) / 2 + i * (group.intervalM * scale);
@@ -487,11 +483,12 @@
               }
               img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
               devicesGroup.appendChild(img);
+              // Etykieta ustawiona pod urządzeniem
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
-              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("y", devicesTop + group.devHeightPx + fontSize);
               devLabel.setAttribute("text-anchor", "middle");
-              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("font-size", fontSize);
               devLabel.setAttribute("fill", "#fff");
               devLabel.textContent = group.device.nazwa;
               devicesGroup.appendChild(devLabel);
@@ -506,9 +503,9 @@
               devicesGroup.appendChild(devRect);
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
-              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("y", devicesTop + group.devHeightPx + fontSize);
               devLabel.setAttribute("text-anchor", "middle");
-              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("font-size", fontSize);
               devLabel.setAttribute("fill", "#fff");
               devLabel.textContent = group.device.nazwa;
               devicesGroup.appendChild(devLabel);
@@ -538,9 +535,9 @@
               devicesGroup.appendChild(img);
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
-              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("y", devicesTop + group.devHeightPx + fontSize);
               devLabel.setAttribute("text-anchor", "middle");
-              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("font-size", fontSize);
               devLabel.setAttribute("fill", "#fff");
               devLabel.textContent = group.device.nazwa;
               devicesGroup.appendChild(devLabel);
@@ -555,9 +552,9 @@
               devicesGroup.appendChild(devRect);
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
-              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("y", devicesTop + group.devHeightPx + fontSize);
               devLabel.setAttribute("text-anchor", "middle");
-              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("font-size", fontSize);
               devLabel.setAttribute("fill", "#fff");
               devLabel.textContent = group.device.nazwa;
               devicesGroup.appendChild(devLabel);
