@@ -1,5 +1,5 @@
 [
-    { "id": 1, "nazwa": "Robe 800", "pobor": 420, "masa": 18, "szer": 30, "wys": 44.4 },
+    { "id": 1, "nazwa": "Robe 800", "pobor": 420, "masa": 11.5, "szer": 30, "wys": 44.4 },
     { "id": 2, "nazwa": "Aura XIP", "pobor": 1000, "masa": 18, "szer": 40, "wys": 55 },
     { "id": 3, "nazwa": "Quantum", "pobor": 2000, "masa": 18, "szer": 40, "wys": 55 },
     { "id": 4, "nazwa": "Pointe", "pobor": 400, "masa": 18, "szer": 40, "wys": 55 },
