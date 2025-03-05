@@ -375,9 +375,7 @@
     // Rysujemy kratownicę jako prostokąt z zachowaniem proporcji:
     // - Skala: svgWidth / gridLength (px/m)
     // - Wysokość kratownicy: (gridWidth / 1000) * scale
-    // Urządzenia umieszczamy 25px poniżej kratownicy – to gwarantuje, że zawsze będą poniżej
-    // Każda grupa urządzeń (typu) jest wycentrowana względem całej szerokości SVG.
-    // Dodatkowo zarówno szerokość, jak i wysokość prostokątów urządzeń są skalowane.
+    // Urządzenia umieszczamy tak, że ich górne krawędzie są 5px poniżej dolnej krawędzi kratownicy.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
@@ -401,8 +399,8 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Urządzenia umieszczamy 25px poniżej kratownicy – gwarantuje, że będą zawsze poniżej prostokąta
-      const devicesY = rectY + rectHeight + 25;
+      // Ustalamy, że górne krawędzie urządzeń mają być oddalone o 5px od dolnej krawędzi kratownicy
+      const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       
       // Grupujemy urządzenia wg typu – każda grupa dotyczy jednego typu urządzenia
@@ -415,10 +413,10 @@
           const qty = parseInt(quantityInput.value) || 0;
           if (qty > 0) {
             const intervalM = parseFloat(intervalInput.value) || 0;
-            // Przeliczamy szerokość urządzenia (szerokość w cm na m, następnie na px)
-            const devWidthM = device.szer * 0.01; // np. 40 cm -> 0.4 m
+            // Przeliczamy szerokość urządzenia (szerokość w cm -> m -> px)
+            const devWidthM = device.szer * 0.01;
             const devWidthPx = devWidthM * scale;
-            // Przeliczamy wysokość urządzenia – wartość "wys" w JSON (w cm) -> m -> px
+            // Przeliczamy wysokość urządzenia (wysokość w cm -> m -> px)
             const devHeightPx = device.wys * 0.01 * scale;
             let groupWidth = qty * devWidthPx;
             if (qty > 1) {
@@ -431,14 +429,14 @@
       
       if (groups.length === 0) return;
       
-      // Każda grupa jest wycentrowana względem całej szerokości SVG
+      // Każda grupa jest wycentrowana względem całej szerokości SVG – czyli jej bloki będą miały górną krawędź ustawioną na devicesTop
       groups.forEach(group => {
         let xStart = centerX - (group.groupWidth / 2);
         for (let i = 0; i < group.qty; i++) {
           const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
           devRect.setAttribute("x", xStart);
-          // Ustawiamy prostokąt urządzenia tak, aby był rysowany poniżej kratownicy
-          devRect.setAttribute("y", devicesY - group.devHeightPx);
+          // Ustawiamy górną krawędź urządzenia na devicesTop
+          devRect.setAttribute("y", devicesTop);
           devRect.setAttribute("width", group.devWidthPx);
           devRect.setAttribute("height", group.devHeightPx);
           const color = colorPalette[(group.device.id - 1) % colorPalette.length];
@@ -447,8 +445,8 @@
           
           const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
           devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
-          // Umieszczamy etykietę 5px powyżej prostokąta urządzenia
-          devLabel.setAttribute("y", (devicesY - group.devHeightPx) - 5);
+          // Umieszczamy etykietę 5px powyżej górnej krawędzi urządzenia
+          devLabel.setAttribute("y", devicesTop - 5);
           devLabel.setAttribute("text-anchor", "middle");
           devLabel.setAttribute("font-size", "10");
           devLabel.setAttribute("fill", "#fff");
