@@ -21,6 +21,7 @@
       text-align: center;
       margin: 20px;
     }
+    /* Kontener formularza – szeroki, aby zmieścić wszystkie kontrolki */
     .container {
       background: var(--container-bg);
       padding: 20px;
@@ -65,7 +66,7 @@
       font-size: 1em;
       font-weight: bold;
     }
-    /* Opcja globalna nie jest już używana – teraz opcja per urządzenie */
+    /* Każdy wiersz urządzenia */
     .device-container {
       display: flex;
       flex-direction: row;
@@ -116,17 +117,12 @@
     .center-align-option label {
       font-size: 0.9em;
     }
+    /* Kontener wizualizacji – usunięto nagłówek oraz biały obrys, rozmiar dopasowany do zawartości */
     .visualization-container {
       width: 90%;
       max-width: 900px;
       margin: 20px auto;
-      background: rgba(0,0,0,0.4);
-      padding: 10px;
-      border-radius: 6px;
-    }
-    .visualization-container h3 {
-      text-align: center;
-      margin: 0 0 10px 0;
+      /* Usunięto tło i padding, aby kontener dopasowywał się do zawartości */
     }
   </style>
 </head>
@@ -158,10 +154,9 @@
     <button class="button" onclick="clearAll()">Clear all</button>
     <h3 id="total-energy">Całkowity pobór: 0 W</h3>
   </div>
-  <!-- Wizualizacja -->
+  <!-- Wizualizacja – SVG bez nagłówka i obrysu -->
   <div class="visualization-container">
-    <h3>Wizualizacja rozmieszczenia</h3>
-    <svg id="truss-visualization" width="900" height="550" style="border:1px solid #fff;"></svg>
+    <svg id="truss-visualization"></svg>
   </div>
   <script>
     let devices = [];           // wybrane urządzenia
@@ -177,7 +172,7 @@
       "#000080","#808080","#000000"
     ];
 
-    // Zapis stanu – zapisujemy również per‑device opcję centerAlign
+    // Zapis stanu – per-device opcja centerAlign
     function saveState() {
       const state = {
         devices: devices.map(device => {
@@ -207,7 +202,7 @@
       state.devices.forEach(savedDevice => {
         const device = allDevices.find(d => d.id === savedDevice.id);
         if (device && !devices.find(d => d.id === device.id)) {
-          device.centerAlign = savedDevice.centerAlign; // zapamiętujemy per‑device opcję
+          device.centerAlign = savedDevice.centerAlign;
           devices.push(device);
         }
       });
@@ -277,7 +272,7 @@
       labelContainer.appendChild(checkbox);
       labelContainer.appendChild(label);
       
-      // Dodajemy opcję wyrównania od środka dla tego urządzenia
+      // Opcja wyrównania od środka dla tego urządzenia
       const centerAlignContainer = document.createElement('div');
       centerAlignContainer.classList.add('center-align-option');
       const centerAlignCheckbox = document.createElement('input');
@@ -402,20 +397,19 @@
       updateTrussVisualization();
     }
 
-    // Funkcja rysująca kratownicę oraz grupy urządzeń.
-    // Górna krawędź urządzeń (prostokątów lub obrazków) ustawiana jest dokładnie 5px poniżej kratownicy.
-    // Dla urządzenia w trybie centerAlign (checkbox per-device) obliczamy pozycje na podstawie środków,
-    // w przeciwnym razie pozycje liczone są od lewej krawędzi.
+    // Rysujemy kratownicę oraz grupy urządzeń.
+    // Górna krawędź każdego elementu ustawiamy na dokładnie 5px poniżej kratownicy.
+    // Jeśli dla danego urządzenia checkbox "Wyrównaj od środka" jest zaznaczony,
+    // odstępy między egzemplarzami liczymy na podstawie środków (środek = lewy + (devWidthPx/2)).
     // Obrazki dla "Robe 800", "Quantum" i "Aura XIP" są wstawiane według odpowiednich ścieżek.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
       const svgWidth = svg.clientWidth;
-      const svgHeight = svg.clientHeight;
       
-      // Skala: piksele na metr
+      // Używamy tej samej skali: px/m
       const scale = svgWidth / gridLength;
-      // Obliczamy wysokość kratownicy (przeliczając mm na m)
+      // Obliczamy wysokość kratownicy
       const rectHeight = (gridWidth / 1000) * scale;
       
       // Rysujemy kratownicę od 20px od góry
@@ -430,7 +424,7 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Górna krawędź urządzeń – dokładnie 5px poniżej kratownicy
+      // Górna krawędź urządzeń: 5px poniżej kratownicy
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       
@@ -444,26 +438,25 @@
           const qty = parseInt(quantityInput.value) || 0;
           if (qty > 0) {
             const intervalM = parseFloat(intervalInput.value) || 0;
-            // Obliczamy szerokość urządzenia (przeliczając cm->m->px)
+            // Szerokość urządzenia
             const devWidthM = device.szer * 0.01;
             const devWidthPx = devWidthM * scale;
-            // Obliczamy wysokość urządzenia (przeliczając cm->m->px)
+            // Wysokość urządzenia
             let devHeightPx = device.wys * 0.01 * scale;
-            // Określamy, czy dla tego urządzenia checkbox centerAlign jest zaznaczony
-            const centerCheckbox = document.getElementById('center-align-' + device.id);
-            const centerAlign = centerCheckbox ? centerCheckbox.checked : false;
-            device.centerAlign = centerAlign; // zapisujemy tę wartość w obiekcie
-            // Dla obrazków – "Robe 800", "Quantum", "Aura XIP" – stosujemy te same obliczenia
+            // Sprawdzamy, czy urządzenie ma obrazkową reprezentację
             const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
             const isQuantum = device.nazwa.indexOf("Quantum") !== -1;
             const isAuraXIP = device.nazwa.indexOf("Aura XIP") !== -1;
+            // Sprawdzamy per-device opcję wyrównania
+            const centerCheckbox = document.getElementById('center-align-' + device.id);
+            const centerAlign = centerCheckbox ? centerCheckbox.checked : false;
+            device.centerAlign = centerAlign;
+            
             let groupWidth;
             if (centerAlign) {
-              // Odstępy liczone od środka: środek grupy to centerX, a grupa rozciąga się o:
-              // groupWidth = devWidthPx + (qty - 1) * (intervalM * scale)
+              // Liczymy od środków: odstęp między środkami wynosi (intervalM * scale)
               groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
             } else {
-              // Standardowy tryb: groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale)
               groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
             }
             groups.push({ device, qty, intervalM, groupWidth, devWidthPx, devHeightPx });
@@ -473,12 +466,66 @@
       
       if (groups.length === 0) return;
       
-      // Dla każdej grupy, umieszczamy ją wycentrowaną względem środka kratownicy
       groups.forEach(group => {
-        // Jeśli tryb centerAlign jest zaznaczony dla danej grupy, obliczamy pozycje na podstawie środków:
-        if (group.device.centerAlign) {
-          // Obliczamy pozycje środków: odstęp między środkami wynosi (intervalM * scale)
-          // Cała grupa rozciąga się na: groupWidth = devWidthPx + (qty - 1) * (intervalM * scale)
+        if (!group.device.centerAlign || group.device.nazwa.indexOf("Robe 800") !== -1 || group.device.nazwa.indexOf("Quantum") !== -1 || group.device.nazwa.indexOf("Aura XIP") !== -1) {
+          // Standardowy tryb: rozmieszczamy sekwencyjnie od lewej krawędzi grupy
+          let xStart = centerX - (group.groupWidth / 2);
+          for (let i = 0; i < group.qty; i++) {
+            const isImage = group.device.nazwa.indexOf("Robe 800") !== -1 ||
+                            group.device.nazwa.indexOf("Quantum") !== -1 ||
+                            group.device.nazwa.indexOf("Aura XIP") !== -1;
+            if (isImage) {
+              const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+              img.setAttribute("x", xStart);
+              img.setAttribute("y", devicesTop);
+              img.setAttribute("width", group.devWidthPx);
+              img.setAttribute("height", group.devHeightPx);
+              let imgSrc = "";
+              if (group.device.nazwa.indexOf("Robe 800") !== -1) {
+                imgSrc = "/Wlodi-ile-nog/images/800.png";
+              } else if (group.device.nazwa.indexOf("Quantum") !== -1) {
+                imgSrc = "/Wlodi-ile-nog/images/quantum.png";
+              } else if (group.device.nazwa.indexOf("Aura XIP") !== -1) {
+                imgSrc = "/Wlodi-ile-nog/images/aura.png";
+              }
+              img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
+              svg.appendChild(img);
+              // Obliczamy font-size proporcjonalnie do wysokości urządzenia (np. 20% wysokości)
+              const fontSize = group.devHeightPx * 0.2;
+              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+              devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
+              devLabel.setAttribute("y", devicesTop + group.devHeightPx + fontSize + 5);
+              devLabel.setAttribute("text-anchor", "middle");
+              devLabel.setAttribute("font-size", fontSize);
+              devLabel.setAttribute("fill", "#fff");
+              devLabel.textContent = group.device.nazwa;
+              svg.appendChild(devLabel);
+            } else {
+              const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+              devRect.setAttribute("x", xStart);
+              devRect.setAttribute("y", devicesTop);
+              devRect.setAttribute("width", group.devWidthPx);
+              devRect.setAttribute("height", group.devHeightPx);
+              const color = colorPalette[(group.device.id - 1) % colorPalette.length];
+              devRect.setAttribute("fill", color);
+              svg.appendChild(devRect);
+              const fontSize = group.devHeightPx * 0.2;
+              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+              devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
+              devLabel.setAttribute("y", devicesTop + group.devHeightPx + fontSize + 5);
+              devLabel.setAttribute("text-anchor", "middle");
+              devLabel.setAttribute("font-size", fontSize);
+              devLabel.setAttribute("fill", "#fff");
+              devLabel.textContent = group.device.nazwa;
+              svg.appendChild(devLabel);
+            }
+            xStart += group.devWidthPx;
+            if (i < group.qty - 1) {
+              xStart += group.intervalM * scale;
+            }
+          }
+        } else {
+          // Tryb "od środka": rozmieszczamy na podstawie środków
           for (let i = 0; i < group.qty; i++) {
             const centerPos = centerX - ((group.qty - 1) * (group.intervalM * scale)) / 2 + i * (group.intervalM * scale);
             const leftEdge = centerPos - (group.devWidthPx / 2);
@@ -501,11 +548,12 @@
               }
               img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
               svg.appendChild(img);
+              const fontSize = group.devHeightPx * 0.2;
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
-              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("y", devicesTop + group.devHeightPx + fontSize + 5);
               devLabel.setAttribute("text-anchor", "middle");
-              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("font-size", fontSize);
               devLabel.setAttribute("fill", "#fff");
               devLabel.textContent = group.device.nazwa;
               svg.appendChild(devLabel);
@@ -518,68 +566,15 @@
               const color = colorPalette[(group.device.id - 1) % colorPalette.length];
               devRect.setAttribute("fill", color);
               svg.appendChild(devRect);
+              const fontSize = group.devHeightPx * 0.2;
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
-              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("y", devicesTop + group.devHeightPx + fontSize + 5);
               devLabel.setAttribute("text-anchor", "middle");
-              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("font-size", fontSize);
               devLabel.setAttribute("fill", "#fff");
               devLabel.textContent = group.device.nazwa;
               svg.appendChild(devLabel);
-            }
-          }
-        } else {
-          // Standardowy tryb: rozmieszczamy egzemplarze sekwencyjnie
-          let xStart = centerX - (group.groupWidth / 2);
-          for (let i = 0; i < group.qty; i++) {
-            const isImage = group.device.nazwa.indexOf("Robe 800") !== -1 ||
-                            group.device.nazwa.indexOf("Quantum") !== -1 ||
-                            group.device.nazwa.indexOf("Aura XIP") !== -1;
-            if (isImage) {
-              const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-              img.setAttribute("x", xStart);
-              img.setAttribute("y", devicesTop);
-              img.setAttribute("width", group.devWidthPx);
-              img.setAttribute("height", group.devHeightPx);
-              let imgSrc = "";
-              if (group.device.nazwa.indexOf("Robe 800") !== -1) {
-                imgSrc = "/Wlodi-ile-nog/images/800.png";
-              } else if (group.device.nazwa.indexOf("Quantum") !== -1) {
-                imgSrc = "/Wlodi-ile-nog/images/quantum.png";
-              } else if (group.device.nazwa.indexOf("Aura XIP") !== -1) {
-                imgSrc = "/Wlodi-ile-nog/images/aura.png";
-              }
-              img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
-              svg.appendChild(img);
-              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-              devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
-              devLabel.setAttribute("y", devicesTop - 5);
-              devLabel.setAttribute("text-anchor", "middle");
-              devLabel.setAttribute("font-size", "10");
-              devLabel.setAttribute("fill", "#fff");
-              devLabel.textContent = group.device.nazwa;
-              svg.appendChild(devLabel);
-            } else {
-              const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-              devRect.setAttribute("x", xStart);
-              devRect.setAttribute("y", devicesTop);
-              devRect.setAttribute("width", group.devWidthPx);
-              devRect.setAttribute("height", group.devHeightPx);
-              const color = colorPalette[(group.device.id - 1) % colorPalette.length];
-              devRect.setAttribute("fill", color);
-              svg.appendChild(devRect);
-              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-              devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
-              devLabel.setAttribute("y", devicesTop - 5);
-              devLabel.setAttribute("text-anchor", "middle");
-              devLabel.setAttribute("font-size", "10");
-              devLabel.setAttribute("fill", "#fff");
-              devLabel.textContent = group.device.nazwa;
-              svg.appendChild(devLabel);
-            }
-            xStart += group.devWidthPx;
-            if (i < group.qty - 1) {
-              xStart += group.intervalM * scale;
             }
           }
         }
