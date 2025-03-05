@@ -65,7 +65,6 @@
       font-size: 1em;
       font-weight: bold;
     }
-    /* Opcja globalna nie jest już używana – teraz opcja per urządzenie */
     .device-container {
       display: flex;
       flex-direction: row;
@@ -107,7 +106,6 @@
       -webkit-appearance: none;
       margin: 0;
     }
-    /* Opcja wyrównania od środka per urządzenie */
     .center-align-option {
       display: flex;
       align-items: center;
@@ -164,7 +162,7 @@
     <svg id="truss-visualization" width="900" height="550" style="border:1px solid #fff;"></svg>
   </div>
   <script>
-    let devices = [];           // wybrane urządzenia
+    let devices = [];           // aktywne urządzenia
     let availableDevices = [];  // urządzenia dostępne do dodania
     let allDevices = [];        // wszystkie urządzenia (JSON)
     let gridLength = 12;        // długość kraty w m
@@ -204,10 +202,11 @@
       const savedState = localStorage.getItem('deviceState');
       if (!savedState) return;
       const state = JSON.parse(savedState);
+      // Odtwarzamy listę urządzeń – dodajemy tylko te, których jeszcze nie ma
       state.devices.forEach(savedDevice => {
         const device = allDevices.find(d => d.id === savedDevice.id);
         if (device && !devices.find(d => d.id === device.id)) {
-          device.centerAlign = savedDevice.centerAlign; // zapamiętujemy per‑device opcję
+          device.centerAlign = savedDevice.centerAlign; // zapamiętujemy opcję wyrównania
           devices.push(device);
         }
       });
@@ -224,6 +223,7 @@
       }
       renderDeviceList();
       populateDeviceSelection();
+      // Ustawiamy parametry zapisane dla każdego urządzenia
       state.devices.forEach(savedDevice => {
         const quantityInput = document.getElementById('quantity-' + savedDevice.id);
         const checkbox = document.getElementById('device-' + savedDevice.id);
@@ -277,7 +277,7 @@
       labelContainer.appendChild(checkbox);
       labelContainer.appendChild(label);
       
-      // Dodajemy opcję wyrównania od środka dla tego urządzenia
+      // Opcja wyrównania od środka dla danego urządzenia
       const centerAlignContainer = document.createElement('div');
       centerAlignContainer.classList.add('center-align-option');
       const centerAlignCheckbox = document.createElement('input');
@@ -373,15 +373,21 @@
       document.getElementById('device-list').appendChild(container);
     }
 
+    // Funkcja dodająca nowe urządzenie bez kasowania poprzednich
     function addSelectedDevice() {
       const select = document.getElementById('device-select');
       const selectedId = parseInt(select.value);
       const selectedDevice = availableDevices.find(d => d.id === selectedId);
       if (!selectedDevice) return;
+      // Dodajemy urządzenie tylko, jeśli go jeszcze nie ma
       if (!devices.find(d => d.id === selectedId)) {
         devices.push(selectedDevice);
       }
-      availableDevices = availableDevices.filter(d => d.id !== selectedId);
+      // Usuwamy dodane urządzenie z dostępnych, wykorzystując metodę splice
+      const index = availableDevices.findIndex(d => d.id === selectedId);
+      if (index > -1) {
+        availableDevices.splice(index, 1);
+      }
       renderDeviceList();
       populateDeviceSelection();
       calculateEnergy();
@@ -402,23 +408,14 @@
       updateTrussVisualization();
     }
 
-    // Funkcja rysująca kratownicę oraz grupy urządzeń.
-    // Górna krawędź urządzeń (prostokątów lub obrazków) ustawiana jest dokładnie 5px poniżej kratownicy.
-    // Dla urządzenia w trybie centerAlign (checkbox per-device) obliczamy pozycje na podstawie środków,
-    // w przeciwnym razie pozycje liczone są od lewej krawędzi.
-    // Obrazki dla "Robe 800", "Quantum" i "Aura XIP" są wstawiane według odpowiednich ścieżek.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
       const svgWidth = svg.clientWidth;
       const svgHeight = svg.clientHeight;
       
-      // Skala: piksele na metr
       const scale = svgWidth / gridLength;
-      // Obliczamy wysokość kratownicy (przeliczając mm na m)
       const rectHeight = (gridWidth / 1000) * scale;
-      
-      // Rysujemy kratownicę od 20px od góry
       const rectY = 20;
       const trussRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       trussRect.setAttribute("x", "0");
@@ -430,11 +427,8 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Górna krawędź urządzeń – dokładnie 5px poniżej kratownicy
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
-      
-      // Grupujemy urządzenia wg typu
       let groups = [];
       devices.forEach(device => {
         const checkbox = document.getElementById('device-' + device.id);
@@ -444,26 +438,19 @@
           const qty = parseInt(quantityInput.value) || 0;
           if (qty > 0) {
             const intervalM = parseFloat(intervalInput.value) || 0;
-            // Obliczamy szerokość urządzenia (przeliczając cm->m->px)
             const devWidthM = device.szer * 0.01;
             const devWidthPx = devWidthM * scale;
-            // Obliczamy wysokość urządzenia (przeliczając cm->m->px)
             let devHeightPx = device.wys * 0.01 * scale;
-            // Określamy, czy dla tego urządzenia checkbox centerAlign jest zaznaczony
             const centerCheckbox = document.getElementById('center-align-' + device.id);
             const centerAlign = centerCheckbox ? centerCheckbox.checked : false;
-            device.centerAlign = centerAlign; // zapisujemy tę wartość w obiekcie
-            // Dla obrazków – "Robe 800", "Quantum", "Aura XIP" – stosujemy te same obliczenia
+            device.centerAlign = centerAlign;
             const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
             const isQuantum = device.nazwa.indexOf("Quantum") !== -1;
             const isAuraXIP = device.nazwa.indexOf("Aura XIP") !== -1;
             let groupWidth;
             if (centerAlign) {
-              // Odstępy liczone od środka: środek grupy to centerX, a grupa rozciąga się o:
-              // groupWidth = devWidthPx + (qty - 1) * (intervalM * scale)
               groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
             } else {
-              // Standardowy tryb: groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale)
               groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
             }
             groups.push({ device, qty, intervalM, groupWidth, devWidthPx, devHeightPx });
@@ -473,12 +460,8 @@
       
       if (groups.length === 0) return;
       
-      // Dla każdej grupy, umieszczamy ją wycentrowaną względem środka kratownicy
       groups.forEach(group => {
-        // Jeśli tryb centerAlign jest zaznaczony dla danej grupy, obliczamy pozycje na podstawie środków:
         if (group.device.centerAlign) {
-          // Obliczamy pozycje środków: odstęp między środkami wynosi (intervalM * scale)
-          // Cała grupa rozciąga się na: groupWidth = devWidthPx + (qty - 1) * (intervalM * scale)
           for (let i = 0; i < group.qty; i++) {
             const centerPos = centerX - ((group.qty - 1) * (group.intervalM * scale)) / 2 + i * (group.intervalM * scale);
             const leftEdge = centerPos - (group.devWidthPx / 2);
@@ -529,7 +512,6 @@
             }
           }
         } else {
-          // Standardowy tryb: rozmieszczamy egzemplarze sekwencyjnie
           let xStart = centerX - (group.groupWidth / 2);
           for (let i = 0; i < group.qty; i++) {
             const isImage = group.device.nazwa.indexOf("Robe 800") !== -1 ||
@@ -588,6 +570,7 @@
 
     function clearAll() {
       localStorage.removeItem('deviceState');
+      // Resetujemy urządzenia tylko, jeśli mamy dane w allDevices
       if (allDevices.length > 0) {
         devices = allDevices.slice(0, 5);
         availableDevices = allDevices.slice(5);
@@ -648,14 +631,18 @@
         .then(response => response.json())
         .then(data => {
           allDevices = data;
-          devices = allDevices.slice(0, 5);
-          availableDevices = allDevices.slice(5);
-          renderDeviceList();
-          populateDeviceSelection();
+          // Jeśli istnieje zapisany stan – przywracamy, w przeciwnym razie ustawiamy domyślne listy
+          if (localStorage.getItem('deviceState')) {
+            restoreState();
+          } else {
+            devices = allDevices.slice(0, 5);
+            availableDevices = allDevices.slice(5);
+            renderDeviceList();
+            populateDeviceSelection();
+            calculateEnergy();
+          }
           initGridLengthControls();
           initGridWidthControl();
-          restoreState();
-          calculateEnergy();
         })
         .catch(error => console.error("Błąd ładowania danych:", error));
     };
