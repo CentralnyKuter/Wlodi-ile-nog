@@ -398,7 +398,7 @@
       saveState();
     }
 
-    // Funkcja aktualizująca wizualizację – podział na warstwy dla kratownicy i urządzeń
+    // Aktualizacja wizualizacji – podział na warstwy dla kratownicy i urządzeń
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       const svgWidth = svg.clientWidth;
@@ -437,6 +437,8 @@
       while (devicesGroup.firstChild) { devicesGroup.removeChild(devicesGroup.firstChild); }
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
+      // Obliczamy rozmiar etykiety na podstawie kratownicy (np. scale/4)
+      const fontSize = scale / 4;
       let groups = [];
       devices.forEach(device => {
         const qty = device.quantity || 0;
@@ -458,8 +460,6 @@
       if (groups.length === 0) return;
       
       groups.forEach(group => {
-        // Obliczamy font-size na podstawie wysokości urządzenia
-        const fontSize = group.devHeightPx / 3;
         if (group.device.centerAlign) {
           for (let i = 0; i < group.qty; i++) {
             const centerPos = centerX - ((group.qty - 1) * (group.intervalM * scale)) / 2 + i * (group.intervalM * scale);
@@ -483,7 +483,6 @@
               }
               img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
               devicesGroup.appendChild(img);
-              // Etykieta ustawiona pod urządzeniem
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
               devLabel.setAttribute("y", devicesTop + group.devHeightPx + fontSize);
@@ -579,22 +578,10 @@
       updateTrussVisualization();
     }
 
+    // Uproszczona wersja funkcji clearAll – czyścimy stan i przeładowujemy stronę
     function clearAll() {
-      localStorage.removeItem('deviceState');
-      if (allDevices.length > 0) {
-        devices = allDevices.slice(0, 5);
-        availableDevices = allDevices.slice(5);
-      } else {
-        devices = [];
-        availableDevices = [];
-      }
-      gridLength = 12;
-      gridWidth = 400;
-      document.getElementById('grid-length-input').value = gridLength;
-      document.getElementById('grid-width-select').value = gridWidth;
-      renderDeviceList();
-      populateDeviceSelection();
-      calculateEnergy();
+      localStorage.clear();
+      window.location.reload();
     }
 
     function initGridLengthControls() {
