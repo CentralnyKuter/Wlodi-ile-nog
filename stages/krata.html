@@ -375,7 +375,9 @@
     // Rysujemy kratownicę jako prostokąt z zachowaniem proporcji:
     // - Skala: svgWidth / gridLength (px/m)
     // - Wysokość kratownicy: (gridWidth / 1000) * scale
-    // Urządzenia umieszczamy tak, że ich górne krawędzie są 5px poniżej dolnej krawędzi kratownicy.
+    // Urządzenia umieszczamy tak, że ich górne krawędzie są dokładnie 5px poniżej dolnej krawędzi kratownicy.
+    // Dla urządzenia "Robe 800" zamiast prostokąta rysujemy obrazek /images/800.png,
+    // przy czym szerokość jest obliczana standardowo, a wysokość ustawiamy na 510px.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
@@ -399,7 +401,7 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Ustalamy, że górne krawędzie urządzeń mają być oddalone o 5px od dolnej krawędzi kratownicy
+      // Ustalamy, że górna krawędź urządzeń ma być 5px poniżej dolnej krawędzi kratownicy
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       
@@ -413,11 +415,15 @@
           const qty = parseInt(quantityInput.value) || 0;
           if (qty > 0) {
             const intervalM = parseFloat(intervalInput.value) || 0;
-            // Przeliczamy szerokość urządzenia (szerokość w cm -> m -> px)
-            const devWidthM = device.szer * 0.01;
+            const devWidthM = device.szer * 0.01; // szerokość w m
             const devWidthPx = devWidthM * scale;
-            // Przeliczamy wysokość urządzenia (wysokość w cm -> m -> px)
-            const devHeightPx = device.wys * 0.01 * scale;
+            // Dla standardowych urządzeń przeliczamy wysokość z JSON (w cm -> m -> px)
+            let devHeightPx = device.wys * 0.01 * scale;
+            // Jeśli urządzenie to "Robe 800", używamy obrazka, więc wysokość ustalamy na stałe na 510px
+            const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
+            if (isRobe800) {
+              devHeightPx = 510; // stała wysokość obrazka
+            }
             let groupWidth = qty * devWidthPx;
             if (qty > 1) {
               groupWidth += (qty - 1) * (intervalM * scale);
@@ -429,30 +435,50 @@
       
       if (groups.length === 0) return;
       
-      // Każda grupa jest wycentrowana względem całej szerokości SVG – czyli jej bloki będą miały górną krawędź ustawioną na devicesTop
+      // Każda grupa jest wycentrowana względem całej szerokości SVG
       groups.forEach(group => {
         let xStart = centerX - (group.groupWidth / 2);
         for (let i = 0; i < group.qty; i++) {
-          const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-          devRect.setAttribute("x", xStart);
-          // Ustawiamy górną krawędź urządzenia na devicesTop
-          devRect.setAttribute("y", devicesTop);
-          devRect.setAttribute("width", group.devWidthPx);
-          devRect.setAttribute("height", group.devHeightPx);
-          const color = colorPalette[(group.device.id - 1) % colorPalette.length];
-          devRect.setAttribute("fill", color);
-          svg.appendChild(devRect);
-          
-          const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-          devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
-          // Umieszczamy etykietę 5px powyżej górnej krawędzi urządzenia
-          devLabel.setAttribute("y", devicesTop - 5);
-          devLabel.setAttribute("text-anchor", "middle");
-          devLabel.setAttribute("font-size", "10");
-          devLabel.setAttribute("fill", "#fff");
-          devLabel.textContent = group.device.nazwa;
-          svg.appendChild(devLabel);
-          
+          const isRobe800 = group.device.nazwa.indexOf("Robe 800") !== -1;
+          if (isRobe800) {
+            // Tworzymy element obrazka zamiast prostokąta
+            const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+            img.setAttribute("x", xStart);
+            img.setAttribute("y", devicesTop);
+            img.setAttribute("width", group.devWidthPx);
+            img.setAttribute("height", group.devHeightPx);
+            // Używamy namespace dla atrybutu href
+            img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "/images/800.png");
+            svg.appendChild(img);
+            // Etykieta – 5px powyżej obrazka
+            const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
+            devLabel.setAttribute("y", devicesTop - 5);
+            devLabel.setAttribute("text-anchor", "middle");
+            devLabel.setAttribute("font-size", "10");
+            devLabel.setAttribute("fill", "#fff");
+            devLabel.textContent = group.device.nazwa;
+            svg.appendChild(devLabel);
+          } else {
+            // Dla innych urządzeń rysujemy prostokąt
+            const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            devRect.setAttribute("x", xStart);
+            devRect.setAttribute("y", devicesTop);
+            devRect.setAttribute("width", group.devWidthPx);
+            devRect.setAttribute("height", group.devHeightPx);
+            const color = colorPalette[(group.device.id - 1) % colorPalette.length];
+            devRect.setAttribute("fill", color);
+            svg.appendChild(devRect);
+            
+            const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
+            devLabel.setAttribute("y", devicesTop - 5);
+            devLabel.setAttribute("text-anchor", "middle");
+            devLabel.setAttribute("font-size", "10");
+            devLabel.setAttribute("fill", "#fff");
+            devLabel.textContent = group.device.nazwa;
+            svg.appendChild(devLabel);
+          }
           xStart += group.devWidthPx;
           if (i < group.qty - 1) {
             xStart += group.intervalM * scale;
