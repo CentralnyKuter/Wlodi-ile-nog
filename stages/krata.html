@@ -67,6 +67,14 @@
       font-size: 1em;
       font-weight: bold;
     }
+    /* Opcja globalna: odstępy liczone od środka */
+    .global-options {
+      margin-bottom: 15px;
+    }
+    .global-options label {
+      font-size: 1em;
+      font-weight: bold;
+    }
     /* Każdy wiersz urządzenia – wszystkie kontrolki w jednej linii */
     .device-container {
       display: flex;
@@ -146,13 +154,20 @@
         </select>
       </div>
     </div>
+    <!-- Globalna opcja: odstępy liczone od środka -->
+    <div class="global-options">
+      <label>
+        <input type="checkbox" id="center-spacing" />
+        Użyj odstępów liczone od środka urządzenia
+      </label>
+    </div>
     <div id="device-list"></div>
     <select id="device-select" style="min-width: 220px;"></select>
     <button class="button" onclick="addSelectedDevice()">Dodaj urządzenie</button>
     <button class="button" onclick="clearAll()">Clear all</button>
     <h3 id="total-energy">Całkowity pobór: 0 W</h3>
   </div>
-  <!-- Wizualizacja – kratownica jako prostokąt, urządzenia umieszczone pod spodem -->
+  <!-- Wizualizacja – kratownica jako prostokąt, urządzenia umieszczone pod kratą -->
   <div class="visualization-container">
     <h3>Wizualizacja rozmieszczenia</h3>
     <svg id="truss-visualization" width="900" height="550" style="border:1px solid #fff;"></svg>
@@ -163,6 +178,7 @@
     let allDevices = [];        // wszystkie urządzenia (JSON)
     let gridLength = 12;        // długość kraty w m
     let gridWidth = 400;        // szerokość kraty w mm
+    let useCenterSpacing = false; // globalny tryb: odstępy od środka (domyślnie false)
 
     const colorPalette = [
       "#e6194b","#3cb44b","#ffe119","#0082c8","#f58231","#911eb4",
@@ -186,7 +202,8 @@
         }),
         availableDevicesIds: availableDevices.map(device => device.id),
         gridLength: gridLength,
-        gridWidth: gridWidth
+        gridWidth: gridWidth,
+        useCenterSpacing: useCenterSpacing
       };
       localStorage.setItem('deviceState', JSON.stringify(state));
     }
@@ -211,6 +228,10 @@
       if (typeof state.gridWidth === 'number') {
         gridWidth = state.gridWidth;
         document.getElementById('grid-width-select').value = gridWidth;
+      }
+      if (typeof state.useCenterSpacing === 'boolean') {
+        useCenterSpacing = state.useCenterSpacing;
+        document.getElementById('center-spacing').checked = useCenterSpacing;
       }
       renderDeviceList();
       populateDeviceSelection();
@@ -376,8 +397,9 @@
     // - Skala: svgWidth / gridLength (px/m)
     // - Wysokość kratownicy: (gridWidth / 1000) * scale
     // Urządzenia umieszczamy tak, że ich górne krawędzie są dokładnie 5px poniżej dolnej krawędzi kratownicy.
-    // Dla "Robe 800" zamiast prostokąta wstawiamy obrazek, używając ścieżki url('/Wlodi-ile-nog/images/800.png'),
-    // a obrazek skalujemy zgodnie z wymiarami podanymi w JSON.
+    // Dla "Robe 800" zamiast prostokąta wstawiamy obrazek (ścieżka: url('/Wlodi-ile-nog/images/800.png')),
+    // a obrazek skalujemy zgodnie z wymiarami podanymi w JSON (przyjmujemy, że obrazek został przygotowany odpowiednio).
+    // Dodatkowo, globalny checkbox "center-spacing" (useCenterSpacing) decyduje, czy odstępy są liczone od końca czy od środka urządzenia.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
@@ -401,7 +423,7 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Ustalamy, że górne krawędzie urządzeń mają być dokładnie 5px poniżej dolnej krawędzi kratownicy
+      // Ustalamy, że górna krawędź urządzeń ma być 5px poniżej dolnej krawędzi kratownicy
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       
@@ -415,22 +437,26 @@
           const qty = parseInt(quantityInput.value) || 0;
           if (qty > 0) {
             const intervalM = parseFloat(intervalInput.value) || 0;
-            // Obliczamy szerokość urządzenia (szerokość w cm -> m -> px)
+            // Przeliczamy szerokość urządzenia (szerokość w cm -> m -> px)
             const devWidthM = device.szer * 0.01;
             const devWidthPx = devWidthM * scale;
-            // Obliczamy wysokość urządzenia – dla standardowych urządzeń przeliczamy z JSON,
-            // a dla "Robe 800" obrazek skalujemy zgodnie z danymi z JSON (przyjmujemy, że obrazek ma naturalne rozmiary 10x większe)
+            // Przeliczamy wysokość urządzenia – dla standardowych urządzeń przeliczamy z JSON,
+            // a dla "Robe 800" obrazek skalujemy zgodnie z przygotowanymi wymiarami.
             let devHeightPx = device.wys * 0.01 * scale;
             const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
             if (isRobe800) {
-              // Przyjmujemy, że obrazek został przygotowany tak, że dla podanej szerokości i wysokości
-              // skalowanie daje wymiary: szerokość = device.szer * 10, wysokość = device.wys * 10
-              // Aby uzyskać te wartości przy naszym scale, możemy np. przyjąć multiplier 10:
+              // Zakładamy, że obrazek przygotowany jest w naturalnych rozmiarach odpowiadających 10-krotności danych z JSON,
+              // więc skalujemy szerokość standardowo, a wysokość ustawiamy jako: device.wys * 10 (możesz dostosować mnożnik)
               devHeightPx = device.wys * 10;
             }
-            let groupWidth = qty * devWidthPx;
-            if (qty > 1) {
-              groupWidth += (qty - 1) * (intervalM * scale);
+            // Obliczamy szerokość grupy
+            let groupWidth;
+            if (!useCenterSpacing) {
+              // Domyślny tryb: odstępy liczone od końca urządzenia
+              groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
+            } else {
+              // Tryb od środka: odległość między środkami urządzeń wynosi (intervalM * scale)
+              groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
             }
             groups.push({ device, qty, intervalM, groupWidth, devWidthPx, devHeightPx });
           }
@@ -441,51 +467,93 @@
       
       // Każda grupa jest wycentrowana względem całej szerokości SVG
       groups.forEach(group => {
-        let xStart = centerX - (group.groupWidth / 2);
-        for (let i = 0; i < group.qty; i++) {
-          const isRobe800 = group.device.nazwa.indexOf("Robe 800") !== -1;
-          if (isRobe800) {
-            // Tworzymy element obrazka zamiast prostokąta
-            const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-            img.setAttribute("x", xStart);
-            img.setAttribute("y", devicesTop);
-            img.setAttribute("width", group.devWidthPx);
-            img.setAttribute("height", group.devHeightPx);
-            // Używamy pełnej ścieżki URL
-            img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "/Wlodi-ile-nog/images/800.png");
-            svg.appendChild(img);
-            // Etykieta – 5px powyżej obrazka
-            const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
-            devLabel.setAttribute("y", devicesTop - 5);
-            devLabel.setAttribute("text-anchor", "middle");
-            devLabel.setAttribute("font-size", "10");
-            devLabel.setAttribute("fill", "#fff");
-            devLabel.textContent = group.device.nazwa;
-            svg.appendChild(devLabel);
-          } else {
-            // Dla innych urządzeń rysujemy prostokąt
-            const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            devRect.setAttribute("x", xStart);
-            devRect.setAttribute("y", devicesTop);
-            devRect.setAttribute("width", group.devWidthPx);
-            devRect.setAttribute("height", group.devHeightPx);
-            const color = colorPalette[(group.device.id - 1) % colorPalette.length];
-            devRect.setAttribute("fill", color);
-            svg.appendChild(devRect);
-            
-            const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
-            devLabel.setAttribute("y", devicesTop - 5);
-            devLabel.setAttribute("text-anchor", "middle");
-            devLabel.setAttribute("font-size", "10");
-            devLabel.setAttribute("fill", "#fff");
-            devLabel.textContent = group.device.nazwa;
-            svg.appendChild(devLabel);
+        let xStart;
+        if (!useCenterSpacing) {
+          xStart = centerX - (group.groupWidth / 2);
+          for (let i = 0; i < group.qty; i++) {
+            const isRobe800 = group.device.nazwa.indexOf("Robe 800") !== -1;
+            if (isRobe800) {
+              const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+              img.setAttribute("x", xStart);
+              img.setAttribute("y", devicesTop);
+              img.setAttribute("width", group.devWidthPx);
+              img.setAttribute("height", group.devHeightPx);
+              img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "/Wlodi-ile-nog/images/800.png");
+              svg.appendChild(img);
+              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+              devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
+              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("text-anchor", "middle");
+              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("fill", "#fff");
+              devLabel.textContent = group.device.nazwa;
+              svg.appendChild(devLabel);
+            } else {
+              const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+              devRect.setAttribute("x", xStart);
+              devRect.setAttribute("y", devicesTop);
+              devRect.setAttribute("width", group.devWidthPx);
+              devRect.setAttribute("height", group.devHeightPx);
+              const color = colorPalette[(group.device.id - 1) % colorPalette.length];
+              devRect.setAttribute("fill", color);
+              svg.appendChild(devRect);
+              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+              devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
+              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("text-anchor", "middle");
+              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("fill", "#fff");
+              devLabel.textContent = group.device.nazwa;
+              svg.appendChild(devLabel);
+            }
+            xStart += group.devWidthPx;
+            if (i < group.qty - 1) {
+              xStart += group.intervalM * scale;
+            }
           }
-          xStart += group.devWidthPx;
-          if (i < group.qty - 1) {
-            xStart += group.intervalM * scale;
+        } else {
+          // Tryb od środka: obliczamy pozycję środków urządzeń
+          xStart = centerX - (group.groupWidth / 2);
+          // W tym trybie, dla każdego egzemplarza:
+          for (let i = 0; i < group.qty; i++) {
+            // Obliczamy środek dla urządzenia: lewy środek = xStart + (i * (interval * scale))
+            const centerPos = xStart + (i * (group.intervalM * scale));
+            const leftEdge = centerPos - (group.devWidthPx / 2);
+            const isRobe800 = group.device.nazwa.indexOf("Robe 800") !== -1;
+            if (isRobe800) {
+              const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+              img.setAttribute("x", leftEdge);
+              img.setAttribute("y", devicesTop);
+              img.setAttribute("width", group.devWidthPx);
+              img.setAttribute("height", group.devHeightPx);
+              img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "/Wlodi-ile-nog/images/800.png");
+              svg.appendChild(img);
+              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+              devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
+              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("text-anchor", "middle");
+              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("fill", "#fff");
+              devLabel.textContent = group.device.nazwa;
+              svg.appendChild(devLabel);
+            } else {
+              const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+              devRect.setAttribute("x", leftEdge);
+              devRect.setAttribute("y", devicesTop);
+              devRect.setAttribute("width", group.devWidthPx);
+              devRect.setAttribute("height", group.devHeightPx);
+              const color = colorPalette[(group.device.id - 1) % colorPalette.length];
+              devRect.setAttribute("fill", color);
+              svg.appendChild(devRect);
+              const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+              devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
+              devLabel.setAttribute("y", devicesTop - 5);
+              devLabel.setAttribute("text-anchor", "middle");
+              devLabel.setAttribute("font-size", "10");
+              devLabel.setAttribute("fill", "#fff");
+              devLabel.textContent = group.device.nazwa;
+              svg.appendChild(devLabel);
+            }
           }
         }
       });
@@ -547,6 +615,13 @@
         calculateEnergy();
       });
     }
+
+    // Inicjalizujemy globalny checkbox dla trybu odstępów od środka
+    document.getElementById('center-spacing').addEventListener('change', (e) => {
+      useCenterSpacing = e.target.checked;
+      saveState();
+      calculateEnergy();
+    });
 
     window.onload = function() {
       fetch('/Wlodi-ile-nog/data/devices.json')
