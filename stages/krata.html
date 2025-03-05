@@ -67,14 +67,6 @@
       font-size: 1em;
       font-weight: bold;
     }
-    /* Globalna opcja: odstępy liczone od środka urządzenia */
-    .global-options {
-      margin-bottom: 15px;
-    }
-    .global-options label {
-      font-size: 1em;
-      font-weight: bold;
-    }
     /* Każdy wiersz urządzenia – wszystkie kontrolki w jednej linii */
     .device-container {
       display: flex;
@@ -117,6 +109,15 @@
       -webkit-appearance: none;
       margin: 0;
     }
+    /* Opcja wyrównania od środka dla urządzenia */
+    .center-align-option {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .center-align-option label {
+      font-size: 0.9em;
+    }
     /* Kontener wizualizacji */
     .visualization-container {
       width: 90%;
@@ -154,13 +155,6 @@
         </select>
       </div>
     </div>
-    <!-- Globalna opcja -->
-    <div class="global-options">
-      <label>
-        <input type="checkbox" id="center-spacing" />
-        Użyj odstępów liczone od środka urządzenia
-      </label>
-    </div>
     <div id="device-list"></div>
     <select id="device-select" style="min-width: 220px;"></select>
     <button class="button" onclick="addSelectedDevice()">Dodaj urządzenie</button>
@@ -178,7 +172,6 @@
     let allDevices = [];        // wszystkie urządzenia (JSON)
     let gridLength = 12;        // długość kraty w m
     let gridWidth = 400;        // szerokość kraty w mm
-    let useCenterSpacing = false; // globalny tryb: odstępy od środka (domyślnie false)
 
     const colorPalette = [
       "#e6194b","#3cb44b","#ffe119","#0082c8","#f58231","#911eb4",
@@ -187,23 +180,25 @@
       "#000080","#808080","#000000"
     ];
 
+    // W funkcji saveState przechowujemy stan urządzeń (niezmiennie)
     function saveState() {
       const state = {
         devices: devices.map(device => {
           const quantityInput = document.getElementById('quantity-' + device.id);
           const checkbox = document.getElementById('device-' + device.id);
           const intervalInput = document.getElementById('interval-' + device.id);
+          const centerCheckbox = document.getElementById('center-align-' + device.id);
           return {
             id: device.id,
             quantity: quantityInput ? +quantityInput.value : 0,
             isChecked: checkbox ? checkbox.checked : true,
-            interval: intervalInput ? +intervalInput.value : 1.0
+            interval: intervalInput ? +intervalInput.value : 1.0,
+            centerAlign: centerCheckbox ? centerCheckbox.checked : false
           };
         }),
         availableDevicesIds: availableDevices.map(device => device.id),
         gridLength: gridLength,
-        gridWidth: gridWidth,
-        useCenterSpacing: useCenterSpacing
+        gridWidth: gridWidth
       };
       localStorage.setItem('deviceState', JSON.stringify(state));
     }
@@ -215,6 +210,7 @@
       state.devices.forEach(savedDevice => {
         const device = allDevices.find(d => d.id === savedDevice.id);
         if (device && !devices.find(d => d.id === device.id)) {
+          device.centerAlign = savedDevice.centerAlign; // zapamiętujemy opcję wyrównania od środka
           devices.push(device);
         }
       });
@@ -229,19 +225,17 @@
         gridWidth = state.gridWidth;
         document.getElementById('grid-width-select').value = gridWidth;
       }
-      if (typeof state.useCenterSpacing === 'boolean') {
-        useCenterSpacing = state.useCenterSpacing;
-        document.getElementById('center-spacing').checked = useCenterSpacing;
-      }
       renderDeviceList();
       populateDeviceSelection();
       state.devices.forEach(savedDevice => {
         const quantityInput = document.getElementById('quantity-' + savedDevice.id);
         const checkbox = document.getElementById('device-' + savedDevice.id);
         const intervalInput = document.getElementById('interval-' + savedDevice.id);
+        const centerCheckbox = document.getElementById('center-align-' + savedDevice.id);
         if (quantityInput) quantityInput.value = savedDevice.quantity;
         if (checkbox) checkbox.checked = savedDevice.isChecked;
         if (intervalInput) intervalInput.value = savedDevice.interval;
+        if (centerCheckbox) centerCheckbox.checked = savedDevice.centerAlign;
       });
       calculateEnergy();
     }
@@ -285,6 +279,23 @@
       label.textContent = `${device.nazwa} (${device.pobor} W)`;
       labelContainer.appendChild(checkbox);
       labelContainer.appendChild(label);
+      
+      // Dodajemy opcję wyrównania od środka dla tego urządzenia
+      const centerAlignContainer = document.createElement('div');
+      centerAlignContainer.classList.add('center-align-option');
+      const centerAlignCheckbox = document.createElement('input');
+      centerAlignCheckbox.type = 'checkbox';
+      centerAlignCheckbox.id = 'center-align-' + device.id;
+      centerAlignCheckbox.checked = device.centerAlign || false;
+      centerAlignCheckbox.addEventListener('change', () => {
+        device.centerAlign = centerAlignCheckbox.checked;
+        calculateEnergy();
+        saveState();
+      });
+      const centerAlignLabel = document.createElement('label');
+      centerAlignLabel.textContent = "Wyrównaj od środka";
+      centerAlignContainer.appendChild(centerAlignCheckbox);
+      centerAlignContainer.appendChild(centerAlignLabel);
       
       const quantityContainer = document.createElement('div');
       quantityContainer.classList.add('quantity-controls');
@@ -359,6 +370,7 @@
       intervalContainer.appendChild(plusIntervalButton);
       
       container.appendChild(labelContainer);
+      container.appendChild(centerAlignContainer);
       container.appendChild(quantityContainer);
       container.appendChild(intervalContainer);
       document.getElementById('device-list').appendChild(container);
@@ -397,10 +409,11 @@
     // - Skala: svgWidth / gridLength (px/m)
     // - Wysokość kratownicy: (gridWidth / 1000) * scale
     // Urządzenia (prostokąty lub obrazki) umieszczamy tak, że ich górne krawędzie są dokładnie 5px poniżej dolnej krawędzi kratownicy.
-    // W trybie domyślnym odstępy liczone są od końca urządzenia,
-    // a w trybie "od środka" odstępy są liczone od środka urządzenia.
-    // Obrazki dla "Robe 800", "Quantum" i "Aura XIP" są wstawiane odpowiednio,
-    // a ich pozycja jest obliczana w zależności od trybu.
+    // Dla urządzeń, które mają ustawioną opcję centerAlign (przez per‑device checkbox),
+    // odstępy są liczone od środka – czyli środek każdego egzemplarza ustawiany jest według (intervalM * scale),
+    // a lewy brzeg obliczamy jako (środek - devWidthPx/2).
+    // Dla pozostałych urządzeń stosowany jest standardowy tryb.
+    // Obrazki dla "Robe 800", "Quantum" i "Aura XIP" są wstawiane według odpowiednich ścieżek.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
@@ -424,7 +437,7 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Ustalamy, że górna krawędź urządzeń ma być dokładnie 5px poniżej dolnej krawędzi kratownicy
+      // Górna krawędź urządzeń: 5px poniżej dolnej krawędzi kratownicy
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       
@@ -438,21 +451,21 @@
           const qty = parseInt(quantityInput.value) || 0;
           if (qty > 0) {
             const intervalM = parseFloat(intervalInput.value) || 0;
-            // Obliczamy szerokość urządzenia (szerokość w cm -> m -> px)
+            // Obliczamy szerokość urządzenia (w cm -> m -> px)
             const devWidthM = device.szer * 0.01;
             const devWidthPx = devWidthM * scale;
             // Obliczamy wysokość urządzenia (w cm -> m -> px)
             let devHeightPx = device.wys * 0.01 * scale;
-            // Sprawdzamy, czy dany typ ma być wyświetlony jako obrazek
+            // Dla obrazków używamy tych samych obliczeń (bez dodatkowego przesunięcia)
             const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
             const isQuantum = device.nazwa.indexOf("Quantum") !== -1;
             const isAuraXIP = device.nazwa.indexOf("Aura XIP") !== -1;
-            // Obliczamy groupWidth – w zależności od trybu
+            // Ustalamy tryb: jeżeli device.centerAlign (checkbox w wierszu) jest zaznaczony, to odstępy liczymy od środka
             let groupWidth;
-            if (!useCenterSpacing) {
-              groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
-            } else {
+            if (device.centerAlign) {
               groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
+            } else {
+              groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
             }
             groups.push({ device, qty, intervalM, groupWidth, devWidthPx, devHeightPx });
           }
@@ -461,9 +474,9 @@
       
       if (groups.length === 0) return;
       
-      // Dla każdej grupy, umieszczamy ją wycentrowaną względem całej szerokości SVG
       groups.forEach(group => {
-        if (!useCenterSpacing) {
+        if (!group.device.centerAlign || group.device.nazwa.indexOf("Robe 800") !== -1 || group.device.nazwa.indexOf("Quantum") !== -1 || group.device.nazwa.indexOf("Aura XIP") !== -1) {
+          // Standardowy tryb: rozmieszczanie sekwencyjne
           let xStart = centerX - (group.groupWidth / 2);
           for (let i = 0; i < group.qty; i++) {
             const isImage = group.device.nazwa.indexOf("Robe 800") !== -1 ||
@@ -517,7 +530,7 @@
             }
           }
         } else {
-          // Tryb "od środka": rozmieszczamy egzemplarze tak, że ich środki są oddalone o (intervalM * scale)
+          // Tryb "od środka": rozmieszczamy tak, że środki urządzeń są oddalone o (intervalM * scale)
           let xStart = centerX - (group.groupWidth / 2);
           for (let i = 0; i < group.qty; i++) {
             const centerPos = xStart + (i * (group.intervalM * scale));
@@ -628,13 +641,6 @@
         calculateEnergy();
       });
     }
-
-    // Inicjalizacja globalnego checkboxa dla trybu "od środka"
-    document.getElementById('center-spacing').addEventListener('change', (e) => {
-      useCenterSpacing = e.target.checked;
-      saveState();
-      calculateEnergy();
-    });
 
     window.onload = function() {
       fetch('/Wlodi-ile-nog/data/devices.json')
