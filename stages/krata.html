@@ -175,7 +175,6 @@
       "#000080","#808080","#000000"
     ];
 
-    // Zapis stanu – zapisujemy również per‑device opcję centerAlign
     function saveState() {
       const state = {
         devices: devices.map(device => {
@@ -202,11 +201,10 @@
       const savedState = localStorage.getItem('deviceState');
       if (!savedState) return;
       const state = JSON.parse(savedState);
-      // Odtwarzamy listę urządzeń – dodajemy tylko te, których jeszcze nie ma
       state.devices.forEach(savedDevice => {
         const device = allDevices.find(d => d.id === savedDevice.id);
         if (device && !devices.find(d => d.id === device.id)) {
-          device.centerAlign = savedDevice.centerAlign; // zapamiętujemy opcję wyrównania
+          device.centerAlign = savedDevice.centerAlign;
           devices.push(device);
         }
       });
@@ -223,7 +221,6 @@
       }
       renderDeviceList();
       populateDeviceSelection();
-      // Ustawiamy parametry zapisane dla każdego urządzenia
       state.devices.forEach(savedDevice => {
         const quantityInput = document.getElementById('quantity-' + savedDevice.id);
         const checkbox = document.getElementById('device-' + savedDevice.id);
@@ -277,7 +274,6 @@
       labelContainer.appendChild(checkbox);
       labelContainer.appendChild(label);
       
-      // Opcja wyrównania od środka dla danego urządzenia
       const centerAlignContainer = document.createElement('div');
       centerAlignContainer.classList.add('center-align-option');
       const centerAlignCheckbox = document.createElement('input');
@@ -373,17 +369,15 @@
       document.getElementById('device-list').appendChild(container);
     }
 
-    // Funkcja dodająca nowe urządzenie bez kasowania poprzednich
+    // Dodawanie urządzenia – nie nadpisujemy poprzednich
     function addSelectedDevice() {
       const select = document.getElementById('device-select');
       const selectedId = parseInt(select.value);
       const selectedDevice = availableDevices.find(d => d.id === selectedId);
       if (!selectedDevice) return;
-      // Dodajemy urządzenie tylko, jeśli go jeszcze nie ma
       if (!devices.find(d => d.id === selectedId)) {
         devices.push(selectedDevice);
       }
-      // Usuwamy dodane urządzenie z dostępnych, wykorzystując metodę splice
       const index = availableDevices.findIndex(d => d.id === selectedId);
       if (index > -1) {
         availableDevices.splice(index, 1);
@@ -394,26 +388,28 @@
       saveState();
     }
 
-    function calculateEnergy() {
-      let totalPower = 0;
-      devices.forEach(device => {
-        const checkbox = document.getElementById('device-' + device.id);
-        const quantityInput = document.getElementById('quantity-' + device.id);
-        if (checkbox && checkbox.checked && quantityInput) {
-          const qty = parseInt(quantityInput.value) || 0;
-          totalPower += device.pobor * qty;
-        }
-      });
-      document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
-      updateTrussVisualization();
-    }
-
+    // Nowa wersja aktualizacji wizualizacji – wykorzystujemy osobne grupy SVG
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
-      while (svg.firstChild) { svg.removeChild(svg.firstChild); }
       const svgWidth = svg.clientWidth;
-      const svgHeight = svg.clientHeight;
       
+      // Sprawdzamy i tworzymy grupę dla kratownicy, jeśli nie istnieje
+      let gridGroup = document.getElementById('grid-group');
+      if (!gridGroup) {
+        gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        gridGroup.setAttribute("id", "grid-group");
+        svg.appendChild(gridGroup);
+      }
+      // Tworzymy lub pobieramy grupę urządzeń
+      let devicesGroup = document.getElementById('devices-group');
+      if (!devicesGroup) {
+        devicesGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        devicesGroup.setAttribute("id", "devices-group");
+        svg.appendChild(devicesGroup);
+      }
+      
+      // Aktualizujemy kratownicę – wyczyszczamy tylko gridGroup
+      while (gridGroup.firstChild) { gridGroup.removeChild(gridGroup.firstChild); }
       const scale = svgWidth / gridLength;
       const rectHeight = (gridWidth / 1000) * scale;
       const rectY = 20;
@@ -425,8 +421,10 @@
       trussRect.setAttribute("fill", "#222");
       trussRect.setAttribute("stroke", "#fff");
       trussRect.setAttribute("stroke-width", "2");
-      svg.appendChild(trussRect);
+      gridGroup.appendChild(trussRect);
       
+      // Rysujemy urządzenia – wyczyszczamy tylko devicesGroup
+      while (devicesGroup.firstChild) { devicesGroup.removeChild(devicesGroup.firstChild); }
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       let groups = [];
@@ -444,9 +442,6 @@
             const centerCheckbox = document.getElementById('center-align-' + device.id);
             const centerAlign = centerCheckbox ? centerCheckbox.checked : false;
             device.centerAlign = centerAlign;
-            const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
-            const isQuantum = device.nazwa.indexOf("Quantum") !== -1;
-            const isAuraXIP = device.nazwa.indexOf("Aura XIP") !== -1;
             let groupWidth;
             if (centerAlign) {
               groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
@@ -483,7 +478,7 @@
                 imgSrc = "/Wlodi-ile-nog/images/aura.png";
               }
               img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
-              svg.appendChild(img);
+              devicesGroup.appendChild(img);
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
               devLabel.setAttribute("y", devicesTop - 5);
@@ -491,7 +486,7 @@
               devLabel.setAttribute("font-size", "10");
               devLabel.setAttribute("fill", "#fff");
               devLabel.textContent = group.device.nazwa;
-              svg.appendChild(devLabel);
+              devicesGroup.appendChild(devLabel);
             } else {
               const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
               devRect.setAttribute("x", leftEdge);
@@ -500,7 +495,7 @@
               devRect.setAttribute("height", group.devHeightPx);
               const color = colorPalette[(group.device.id - 1) % colorPalette.length];
               devRect.setAttribute("fill", color);
-              svg.appendChild(devRect);
+              devicesGroup.appendChild(devRect);
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", leftEdge + group.devWidthPx / 2);
               devLabel.setAttribute("y", devicesTop - 5);
@@ -508,7 +503,7 @@
               devLabel.setAttribute("font-size", "10");
               devLabel.setAttribute("fill", "#fff");
               devLabel.textContent = group.device.nazwa;
-              svg.appendChild(devLabel);
+              devicesGroup.appendChild(devLabel);
             }
           }
         } else {
@@ -532,7 +527,7 @@
                 imgSrc = "/Wlodi-ile-nog/images/aura.png";
               }
               img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
-              svg.appendChild(img);
+              devicesGroup.appendChild(img);
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
               devLabel.setAttribute("y", devicesTop - 5);
@@ -540,7 +535,7 @@
               devLabel.setAttribute("font-size", "10");
               devLabel.setAttribute("fill", "#fff");
               devLabel.textContent = group.device.nazwa;
-              svg.appendChild(devLabel);
+              devicesGroup.appendChild(devLabel);
             } else {
               const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
               devRect.setAttribute("x", xStart);
@@ -549,7 +544,7 @@
               devRect.setAttribute("height", group.devHeightPx);
               const color = colorPalette[(group.device.id - 1) % colorPalette.length];
               devRect.setAttribute("fill", color);
-              svg.appendChild(devRect);
+              devicesGroup.appendChild(devRect);
               const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
               devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
               devLabel.setAttribute("y", devicesTop - 5);
@@ -557,7 +552,7 @@
               devLabel.setAttribute("font-size", "10");
               devLabel.setAttribute("fill", "#fff");
               devLabel.textContent = group.device.nazwa;
-              svg.appendChild(devLabel);
+              devicesGroup.appendChild(devLabel);
             }
             xStart += group.devWidthPx;
             if (i < group.qty - 1) {
@@ -568,9 +563,22 @@
       });
     }
 
+    function calculateEnergy() {
+      let totalPower = 0;
+      devices.forEach(device => {
+        const checkbox = document.getElementById('device-' + device.id);
+        const quantityInput = document.getElementById('quantity-' + device.id);
+        if (checkbox && checkbox.checked && quantityInput) {
+          const qty = parseInt(quantityInput.value) || 0;
+          totalPower += device.pobor * qty;
+        }
+      });
+      document.getElementById('total-energy').textContent = `Całkowity pobór: ${totalPower} W`;
+      updateTrussVisualization();
+    }
+
     function clearAll() {
       localStorage.removeItem('deviceState');
-      // Resetujemy urządzenia tylko, jeśli mamy dane w allDevices
       if (allDevices.length > 0) {
         devices = allDevices.slice(0, 5);
         availableDevices = allDevices.slice(5);
@@ -631,7 +639,6 @@
         .then(response => response.json())
         .then(data => {
           allDevices = data;
-          // Jeśli istnieje zapisany stan – przywracamy, w przeciwnym razie ustawiamy domyślne listy
           if (localStorage.getItem('deviceState')) {
             restoreState();
           } else {
