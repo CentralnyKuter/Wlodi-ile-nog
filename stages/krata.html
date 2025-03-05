@@ -396,15 +396,11 @@
     // Rysujemy kratownicę jako prostokąt z zachowaniem proporcji:
     // - Skala: svgWidth / gridLength (px/m)
     // - Wysokość kratownicy: (gridWidth / 1000) * scale
-    // Urządzenia umieszczamy tak, że ich górne krawędzie są dokładnie 5px poniżej dolnej krawędzi kratownicy.
-    // W trybie domyślnym odstępy liczone są od końca urządzenia.
-    // W trybie "od środka" odstępy są liczone od środka urządzenia, czyli:
-    //   - Środek każdego egzemplarza jest rozmieszczany w odstępach równych (intervalM * scale),
-    //     a lewy brzeg ustalamy jako (środek - devWidthPx/2).
-    // Dla "Robe 800", "Quantum" i "Aura XIP" w obu trybach ustawiamy URL obrazka odpowiednio:
-    //   - "Robe 800": /Wlodi-ile-nog/images/800.png
-    //   - "Quantum": /Wlodi-ile-nog/images/quantum.png
-    //   - "Aura XIP": /Wlodi-ile-nog/images/aura.png
+    // Urządzenia (prostokąty lub obrazki) umieszczamy tak, że ich górne krawędzie są dokładnie 5px poniżej dolnej krawędzi kratownicy.
+    // W trybie domyślnym odstępy liczone są od końca urządzenia,
+    // a w trybie "od środka" odstępy są liczone od środka urządzenia.
+    // Obrazki dla "Robe 800", "Quantum" i "Aura XIP" są wstawiane odpowiednio,
+    // a ich pozycja jest obliczana w zależności od trybu.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
@@ -447,13 +443,13 @@
             const devWidthPx = devWidthM * scale;
             // Obliczamy wysokość urządzenia (w cm -> m -> px)
             let devHeightPx = device.wys * 0.01 * scale;
-            // Określamy, czy dany typ ma być wyświetlony jako obrazek:
+            // Sprawdzamy, czy dany typ ma być wyświetlony jako obrazek
             const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
             const isQuantum = device.nazwa.indexOf("Quantum") !== -1;
             const isAuraXIP = device.nazwa.indexOf("Aura XIP") !== -1;
-            // Dla tych urządzeń zawsze używamy domyślnego sposobu (od końca)
+            // Obliczamy groupWidth – w zależności od trybu
             let groupWidth;
-            if (isRobe800 || isQuantum || isAuraXIP || !useCenterSpacing) {
+            if (!useCenterSpacing) {
               groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
             } else {
               groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
@@ -467,26 +463,24 @@
       
       // Dla każdej grupy, umieszczamy ją wycentrowaną względem całej szerokości SVG
       groups.forEach(group => {
-        if (!useCenterSpacing || group.device.nazwa.indexOf("Robe 800") !== -1 || group.device.nazwa.indexOf("Quantum") !== -1 || group.device.nazwa.indexOf("Aura XIP") !== -1) {
-          // Standardowy tryb: rozmieszczamy egzemplarze sekwencyjnie (od końca)
+        if (!useCenterSpacing) {
           let xStart = centerX - (group.groupWidth / 2);
           for (let i = 0; i < group.qty; i++) {
-            const isRobe800 = group.device.nazwa.indexOf("Robe 800") !== -1;
-            const isQuantum = group.device.nazwa.indexOf("Quantum") !== -1;
-            const isAuraXIP = group.device.nazwa.indexOf("Aura XIP") !== -1;
-            if (isRobe800 || isQuantum || isAuraXIP) {
-              // Wstawiamy obrazek według nazwy
+            const isImage = group.device.nazwa.indexOf("Robe 800") !== -1 ||
+                            group.device.nazwa.indexOf("Quantum") !== -1 ||
+                            group.device.nazwa.indexOf("Aura XIP") !== -1;
+            if (isImage) {
               const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
               img.setAttribute("x", xStart);
               img.setAttribute("y", devicesTop);
               img.setAttribute("width", group.devWidthPx);
               img.setAttribute("height", group.devHeightPx);
               let imgSrc = "";
-              if (isRobe800) {
+              if (group.device.nazwa.indexOf("Robe 800") !== -1) {
                 imgSrc = "/Wlodi-ile-nog/images/800.png";
-              } else if (isQuantum) {
+              } else if (group.device.nazwa.indexOf("Quantum") !== -1) {
                 imgSrc = "/Wlodi-ile-nog/images/quantum.png";
-              } else if (isAuraXIP) {
+              } else if (group.device.nazwa.indexOf("Aura XIP") !== -1) {
                 imgSrc = "/Wlodi-ile-nog/images/aura.png";
               }
               img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
@@ -523,26 +517,26 @@
             }
           }
         } else {
-          // Tryb od środka: rozmieszczamy egzemplarze tak, że ich środki są oddalone o (intervalM * scale)
+          // Tryb "od środka": rozmieszczamy egzemplarze tak, że ich środki są oddalone o (intervalM * scale)
           let xStart = centerX - (group.groupWidth / 2);
           for (let i = 0; i < group.qty; i++) {
             const centerPos = xStart + (i * (group.intervalM * scale));
             const leftEdge = centerPos - (group.devWidthPx / 2);
-            const isRobe800 = group.device.nazwa.indexOf("Robe 800") !== -1;
-            const isQuantum = group.device.nazwa.indexOf("Quantum") !== -1;
-            const isAuraXIP = group.device.nazwa.indexOf("Aura XIP") !== -1;
-            if (isRobe800 || isQuantum || isAuraXIP) {
+            const isImage = group.device.nazwa.indexOf("Robe 800") !== -1 ||
+                            group.device.nazwa.indexOf("Quantum") !== -1 ||
+                            group.device.nazwa.indexOf("Aura XIP") !== -1;
+            if (isImage) {
               const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
               img.setAttribute("x", leftEdge);
               img.setAttribute("y", devicesTop);
               img.setAttribute("width", group.devWidthPx);
               img.setAttribute("height", group.devHeightPx);
               let imgSrc = "";
-              if (isRobe800) {
+              if (group.device.nazwa.indexOf("Robe 800") !== -1) {
                 imgSrc = "/Wlodi-ile-nog/images/800.png";
-              } else if (isQuantum) {
+              } else if (group.device.nazwa.indexOf("Quantum") !== -1) {
                 imgSrc = "/Wlodi-ile-nog/images/quantum.png";
-              } else if (isAuraXIP) {
+              } else if (group.device.nazwa.indexOf("Aura XIP") !== -1) {
                 imgSrc = "/Wlodi-ile-nog/images/aura.png";
               }
               img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", imgSrc);
