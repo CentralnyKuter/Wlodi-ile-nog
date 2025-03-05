@@ -12,7 +12,6 @@
       --input-width: 40px;
       --button-size: 12px;
     }
-
     body {
       font-size: 14px;
       font-family: Arial, sans-serif;
@@ -22,20 +21,18 @@
       text-align: center;
       margin: 20px;
     }
-
-    /* Kontener formularza – szeroki, by zmieścić wszystko w jednym rzędzie */
+    /* Kontener formularza – szeroki, aby zmieścić wszystkie kontrolki */
     .container {
       background: var(--container-bg);
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       text-align: left;
       width: 95%;
       max-width: 900px;
       margin: auto;
       margin-bottom: 20px;
     }
-
     .button {
       background-color: var(--button-bg);
       color: white;
@@ -51,8 +48,7 @@
     .button:hover {
       background-color: var(--button-hover);
     }
-
-    /* Kontenery ustawień kraty – obok siebie */
+    /* Ustawienia parametrów kratownicy – długość i szerokość obok siebie */
     .grid-params-container {
       display: flex;
       justify-content: space-between;
@@ -71,7 +67,6 @@
       font-size: 1em;
       font-weight: bold;
     }
-
     /* Każdy wiersz urządzenia – wszystkie kontrolki w jednej linii */
     .device-container {
       display: flex;
@@ -114,7 +109,6 @@
       -webkit-appearance: none;
       margin: 0;
     }
-
     /* Kontener wizualizacji */
     .visualization-container {
       width: 90%;
@@ -133,8 +127,7 @@
 <body>
   <div class="container">
     <h2>Choose your weapon!</h2>
-
-    <!-- Ustawienia parametrów kraty: długość i szerokość -->
+    <!-- Ustawienia parametrów kraty -->
     <div class="grid-params-container">
       <div class="grid-length-container">
         <label for="grid-length-input">Długość kraty (m):</label>
@@ -153,31 +146,24 @@
         </select>
       </div>
     </div>
-
     <div id="device-list"></div>
-
     <select id="device-select" style="min-width: 220px;"></select>
     <button class="button" onclick="addSelectedDevice()">Dodaj urządzenie</button>
     <button class="button" onclick="clearAll()">Clear all</button>
-
     <h3 id="total-energy">Całkowity pobór: 0 W</h3>
   </div>
-
-  <!-- Wizualizacja – kratownica jako prostokąt -->
+  <!-- Wizualizacja – kratownica jako prostokąt, urządzenia pod spodem -->
   <div class="visualization-container">
     <h3>Wizualizacja rozmieszczenia</h3>
-    <!-- SVG, w którym rysujemy kratownicę i urządzenia -->
     <svg id="truss-visualization" width="900" height="550" style="border:1px solid #fff;"></svg>
   </div>
-
   <script>
     let devices = [];           // wybrane urządzenia
     let availableDevices = [];  // urządzenia dostępne do dodania
-    let allDevices = [];        // wszystkie urządzenia (wczytane z JSON)
-    let gridLength = 12;        // długość kraty w metrach (domyślnie 12)
+    let allDevices = [];        // wszystkie urządzenia (JSON)
+    let gridLength = 12;        // długość kraty w m (domyślnie 12)
     let gridWidth = 400;        // szerokość kraty w mm (domyślnie 400)
 
-    // Paleta kolorów – każdy typ urządzenia będzie miał inny kolor
     const colorPalette = [
       "#e6194b","#3cb44b","#ffe119","#0082c8","#f58231","#911eb4",
       "#46f0f0","#f032e6","#d2f53c","#fabebe","#008080","#e6beff",
@@ -185,7 +171,6 @@
       "#000080","#808080","#000000"
     ];
 
-    // Zapis stanu do localStorage
     function saveState() {
       const state = {
         devices: devices.map(device => {
@@ -206,19 +191,17 @@
       localStorage.setItem('deviceState', JSON.stringify(state));
     }
 
-    // Odtwarzanie stanu
     function restoreState() {
       const savedState = localStorage.getItem('deviceState');
       if (!savedState) return;
       const state = JSON.parse(savedState);
-      
       state.devices.forEach(savedDevice => {
         const device = allDevices.find(d => d.id === savedDevice.id);
         if (device && !devices.find(d => d.id === device.id)) {
           devices.push(device);
         }
       });
-      if(state.availableDevicesIds) {
+      if (state.availableDevicesIds) {
         availableDevices = allDevices.filter(d => state.availableDevicesIds.includes(d.id));
       }
       if (typeof state.gridLength === 'number') {
@@ -229,7 +212,7 @@
         gridWidth = state.gridWidth;
         document.getElementById('grid-width-select').value = gridWidth;
       }
-      renderDeviceList();  
+      renderDeviceList();
       populateDeviceSelection();
       state.devices.forEach(savedDevice => {
         const quantityInput = document.getElementById('quantity-' + savedDevice.id);
@@ -239,7 +222,7 @@
         if (checkbox) checkbox.checked = savedDevice.isChecked;
         if (intervalInput) intervalInput.value = savedDevice.interval;
       });
-      calculateEnergy(); 
+      calculateEnergy();
     }
 
     function populateDeviceSelection() {
@@ -265,28 +248,21 @@
       devices.forEach(device => addDeviceToList(device));
     }
 
-    // Dodaje jeden wiersz (blok) dla urządzenia – wszystkie kontrolki w jednej linii
     function addDeviceToList(device) {
       const container = document.createElement('div');
       container.classList.add('device-container');
-
       const labelContainer = document.createElement('div');
       labelContainer.classList.add('device-label');
-
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = device.pobor;
       checkbox.id = 'device-' + device.id;
       checkbox.checked = true;
       checkbox.addEventListener('change', () => { calculateEnergy(); saveState(); });
-
       const label = document.createElement('label');
       label.textContent = `${device.nazwa} (${device.pobor} W)`;
-
       labelContainer.appendChild(checkbox);
       labelContainer.appendChild(label);
-
-      // Kontrolki ilości
       const quantityContainer = document.createElement('div');
       quantityContainer.classList.add('quantity-controls');
       const minusButton = document.createElement('button');
@@ -319,8 +295,6 @@
       quantityContainer.appendChild(minusButton);
       quantityContainer.appendChild(quantityInput);
       quantityContainer.appendChild(plusButton);
-
-      // Kontrolki interwału
       const intervalContainer = document.createElement('div');
       intervalContainer.classList.add('quantity-controls');
       const minusIntervalButton = document.createElement('button');
@@ -359,7 +333,6 @@
       intervalContainer.appendChild(minusIntervalButton);
       intervalContainer.appendChild(intervalInput);
       intervalContainer.appendChild(plusIntervalButton);
-
       container.appendChild(labelContainer);
       container.appendChild(quantityContainer);
       container.appendChild(intervalContainer);
@@ -395,31 +368,36 @@
       updateTrussVisualization();
     }
 
-    // Rysujemy kratownicę jako prostokąt oraz rozmieszczamy urządzenia (na tej samej linii)
+    // Rysujemy kratownicę jako prostokąt o zachowaniu proporcji (długość w m, szerokość w mm przeliczona na m)
+    // Urządzenia umieszczamy 5px poniżej prostokąta
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
       const svgWidth = svg.clientWidth;
       const svgHeight = svg.clientHeight;
-      const centerX = svgWidth / 2;
-      // Skala pozioma: px na metr
+      
+      // Skala: piksele na metr (długość kratownicy)
       const scale = svgWidth / gridLength;
-      // Ustalamy wysokość kratownicy: gridWidth (w mm) traktujemy jako liczbę pikseli.
-      const trussHeight = gridWidth;
-      const rectY = (svgHeight - trussHeight) / 2;
-
-      // Rysujemy prostokąt kratownicy
-      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      rect.setAttribute("x", "0");
-      rect.setAttribute("y", rectY);
-      rect.setAttribute("width", svgWidth);
-      rect.setAttribute("height", trussHeight);
-      rect.setAttribute("fill", "#222");
-      rect.setAttribute("stroke", "#fff");
-      rect.setAttribute("stroke-width", "2");
-      svg.appendChild(rect);
-
-      // Zbieramy egzemplarze urządzeń (blocks) – każde urządzenie traktujemy osobno
+      // Obliczamy wysokość prostokąta kratownicy – przeliczamy mm na m (1 m = 1000 mm)
+      const rectHeight = (gridWidth / 1000) * scale;
+      
+      // Ustal pozycję prostokąta – rysujemy go np. od góry z marginesem 20px
+      const rectY = 20;
+      // Rysujemy kratownicę jako prostokąt
+      const trussRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      trussRect.setAttribute("x", "0");
+      trussRect.setAttribute("y", rectY);
+      trussRect.setAttribute("width", svgWidth);
+      trussRect.setAttribute("height", rectHeight);
+      trussRect.setAttribute("fill", "#222");
+      trussRect.setAttribute("stroke", "#fff");
+      trussRect.setAttribute("stroke-width", "2");
+      svg.appendChild(trussRect);
+      
+      // Urządzenia umieszczamy 5px poniżej prostokąta
+      const devicesY = rectY + rectHeight + 5;
+      
+      // Zbieramy egzemplarze urządzeń (blocks)
       let blocks = [];
       devices.forEach(device => {
         const checkbox = document.getElementById('device-' + device.id);
@@ -429,56 +407,51 @@
           const qty = parseInt(quantityInput.value) || 0;
           const intervalM = parseFloat(intervalInput.value) || 0;
           for (let i = 0; i < qty; i++) {
-            blocks.push({
-              device: device,
-              intervalM: intervalM
-            });
+            blocks.push({ device: device, intervalM: intervalM });
           }
         }
       });
       if (blocks.length === 0) return;
-
-      // Obliczamy łączną szerokość wszystkich egzemplarzy wraz z interwałami
+      
+      // Obliczamy łączną szerokość bloków
       let totalWidthPx = 0;
       blocks.forEach((block, idx) => {
         const dev = block.device;
-        const devWidthM = dev.szer * 0.01; // np. 40 -> 0.4 m
+        const devWidthM = dev.szer * 0.01;  // np. 40 cm -> 0.4 m
         const devWidthPx = devWidthM * scale;
         totalWidthPx += devWidthPx;
         if (idx < blocks.length - 1) {
           totalWidthPx += block.intervalM * scale;
         }
       });
-
-      // Ustawiamy xStart, by wycentrować bloki poziomo
+      
+      const centerX = svgWidth / 2;
       let xStart = centerX - totalWidthPx / 2;
-      // y pozycja: na środku kratownicy
-      const yCenter = rectY + trussHeight / 2;
-
-      // Rysujemy każdy egzemplarz
+      
+      // Rysujemy każdy egzemplarz urządzenia
       blocks.forEach((block, idx) => {
         const dev = block.device;
         const devWidthM = dev.szer * 0.01;
         const devWidthPx = devWidthM * scale;
         const color = colorPalette[(dev.id - 1) % colorPalette.length];
-
+        
         const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         devRect.setAttribute("x", xStart);
-        devRect.setAttribute("y", yCenter - 20);
+        devRect.setAttribute("y", devicesY - 20);
         devRect.setAttribute("width", devWidthPx);
         devRect.setAttribute("height", 40);
         devRect.setAttribute("fill", color);
         svg.appendChild(devRect);
-
+        
         const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
         devLabel.setAttribute("x", xStart + devWidthPx / 2);
-        devLabel.setAttribute("y", yCenter - 25);
+        devLabel.setAttribute("y", devicesY - 25);
         devLabel.setAttribute("text-anchor", "middle");
         devLabel.setAttribute("font-size", "10");
         devLabel.setAttribute("fill", "#fff");
         devLabel.textContent = dev.nazwa;
         svg.appendChild(devLabel);
-
+        
         xStart += devWidthPx;
         if (idx < blocks.length - 1) {
           xStart += block.intervalM * scale;
@@ -504,24 +477,21 @@
       calculateEnergy();
     }
 
-    // Obsługa kontroli długości kraty
     function initGridLengthControls() {
       const minusBtn = document.getElementById('grid-length-minus');
       const plusBtn = document.getElementById('grid-length-plus');
       const lengthInput = document.getElementById('grid-length-input');
-
       minusBtn.addEventListener('click', () => {
         let currentValue = parseFloat(lengthInput.value);
         if (currentValue > 0) {
           currentValue = (currentValue - 0.25).toFixed(2);
-          if (currentValue < 0) currentValue = 0;
+          if(currentValue < 0) currentValue = 0;
           lengthInput.value = currentValue;
           gridLength = parseFloat(lengthInput.value);
           saveState();
           calculateEnergy();
         }
       });
-
       plusBtn.addEventListener('click', () => {
         let currentValue = parseFloat(lengthInput.value);
         currentValue = (currentValue + 0.25).toFixed(2);
@@ -530,7 +500,6 @@
         saveState();
         calculateEnergy();
       });
-
       lengthInput.addEventListener('input', () => {
         gridLength = parseFloat(lengthInput.value) || 0;
         saveState();
@@ -538,7 +507,6 @@
       });
     }
 
-    // Obsługa wyboru szerokości kraty
     function initGridWidthControl() {
       const widthSelect = document.getElementById('grid-width-select');
       widthSelect.addEventListener('change', () => {
