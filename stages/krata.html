@@ -376,8 +376,8 @@
     // - Skala: svgWidth / gridLength (px/m)
     // - Wysokość kratownicy: (gridWidth / 1000) * scale
     // Urządzenia umieszczamy tak, że ich górne krawędzie są dokładnie 5px poniżej dolnej krawędzi kratownicy.
-    // Dla urządzenia "Robe 800" zamiast prostokąta rysujemy obrazek /images/800.png,
-    // przy czym szerokość jest obliczana standardowo, a wysokość ustawiamy na 510px.
+    // Dla "Robe 800" zamiast prostokąta wstawiamy obrazek, używając ścieżki url('/Wlodi-ile-nog/images/800.png'),
+    // a obrazek skalujemy zgodnie z wymiarami podanymi w JSON.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
@@ -401,7 +401,7 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Ustalamy, że górna krawędź urządzeń ma być 5px poniżej dolnej krawędzi kratownicy
+      // Ustalamy, że górne krawędzie urządzeń mają być dokładnie 5px poniżej dolnej krawędzi kratownicy
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       
@@ -415,14 +415,18 @@
           const qty = parseInt(quantityInput.value) || 0;
           if (qty > 0) {
             const intervalM = parseFloat(intervalInput.value) || 0;
-            const devWidthM = device.szer * 0.01; // szerokość w m
+            // Obliczamy szerokość urządzenia (szerokość w cm -> m -> px)
+            const devWidthM = device.szer * 0.01;
             const devWidthPx = devWidthM * scale;
-            // Dla standardowych urządzeń przeliczamy wysokość z JSON (w cm -> m -> px)
+            // Obliczamy wysokość urządzenia – dla standardowych urządzeń przeliczamy z JSON,
+            // a dla "Robe 800" obrazek skalujemy zgodnie z danymi z JSON (przyjmujemy, że obrazek ma naturalne rozmiary 10x większe)
             let devHeightPx = device.wys * 0.01 * scale;
-            // Jeśli urządzenie to "Robe 800", używamy obrazka, więc wysokość ustalamy na stałe na 510px
             const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
             if (isRobe800) {
-              devHeightPx = 510; // stała wysokość obrazka
+              // Przyjmujemy, że obrazek został przygotowany tak, że dla podanej szerokości i wysokości
+              // skalowanie daje wymiary: szerokość = device.szer * 10, wysokość = device.wys * 10
+              // Aby uzyskać te wartości przy naszym scale, możemy np. przyjąć multiplier 10:
+              devHeightPx = device.wys * 10;
             }
             let groupWidth = qty * devWidthPx;
             if (qty > 1) {
@@ -447,8 +451,8 @@
             img.setAttribute("y", devicesTop);
             img.setAttribute("width", group.devWidthPx);
             img.setAttribute("height", group.devHeightPx);
-            // Używamy namespace dla atrybutu href
-            img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "/images/800.png");
+            // Używamy pełnej ścieżki URL
+            img.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "/Wlodi-ile-nog/images/800.png");
             svg.appendChild(img);
             // Etykieta – 5px powyżej obrazka
             const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
