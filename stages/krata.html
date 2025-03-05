@@ -152,7 +152,7 @@
     <button class="button" onclick="clearAll()">Clear all</button>
     <h3 id="total-energy">Całkowity pobór: 0 W</h3>
   </div>
-  <!-- Wizualizacja – kratownica jako prostokąt, urządzenia pod spodem -->
+  <!-- Wizualizacja – kratownica jako prostokąt, urządzenia umieszczone pod spodem -->
   <div class="visualization-container">
     <h3>Wizualizacja rozmieszczenia</h3>
     <svg id="truss-visualization" width="900" height="550" style="border:1px solid #fff;"></svg>
@@ -368,22 +368,22 @@
       updateTrussVisualization();
     }
 
-    // Rysujemy kratownicę jako prostokąt o zachowaniu proporcji (długość w m, szerokość w mm przeliczona na m)
-    // Urządzenia umieszczamy 5px poniżej prostokąta
+    // Rysujemy kratownicę jako prostokąt z zachowaniem proporcji
+    // Urządzenia umieszczamy 5px poniżej prostokąta,
+    // a KAŻDY typ urządzenia (jeśli ma >0 egzemplarzy) jest wycentrowany w swoim segmencie
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
       const svgWidth = svg.clientWidth;
       const svgHeight = svg.clientHeight;
       
-      // Skala: piksele na metr (długość kratownicy)
+      // Skala pozioma: piksele na metr
       const scale = svgWidth / gridLength;
-      // Obliczamy wysokość prostokąta kratownicy – przeliczamy mm na m (1 m = 1000 mm)
+      // Obliczamy wysokość prostokąta kratownicy – przeliczamy mm na m (1m = 1000mm)
       const rectHeight = (gridWidth / 1000) * scale;
       
-      // Ustal pozycję prostokąta – rysujemy go np. od góry z marginesem 20px
+      // Pozycja kratownicy – 20px od góry
       const rectY = 20;
-      // Rysujemy kratownicę jako prostokąt
       const trussRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       trussRect.setAttribute("x", "0");
       trussRect.setAttribute("y", rectY);
@@ -394,67 +394,67 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Urządzenia umieszczamy 5px poniżej prostokąta
+      // Urządzenia umieszczamy 5px poniżej prostokąta kratownicy
       const devicesY = rectY + rectHeight + 5;
       
-      // Zbieramy egzemplarze urządzeń (blocks)
-      let blocks = [];
+      // Tworzymy tablicę z grupami – każda grupa dotyczy jednego typu urządzenia
+      let groups = [];
       devices.forEach(device => {
         const checkbox = document.getElementById('device-' + device.id);
         const quantityInput = document.getElementById('quantity-' + device.id);
         const intervalInput = document.getElementById('interval-' + device.id);
         if (checkbox && checkbox.checked && quantityInput && intervalInput) {
           const qty = parseInt(quantityInput.value) || 0;
-          const intervalM = parseFloat(intervalInput.value) || 0;
-          for (let i = 0; i < qty; i++) {
-            blocks.push({ device: device, intervalM: intervalM });
+          if (qty > 0) {
+            const intervalM = parseFloat(intervalInput.value) || 0;
+            // Obliczamy łączną szerokość dla tego typu urządzenia
+            const devWidthM = device.szer * 0.01; // np. 40 cm -> 0.4 m
+            const devWidthPx = devWidthM * scale;
+            let groupWidth = qty * devWidthPx;
+            if (qty > 1) {
+              groupWidth += (qty - 1) * (intervalM * scale);
+            }
+            groups.push({ device, qty, intervalM, groupWidth, devWidthPx });
           }
         }
       });
-      if (blocks.length === 0) return;
       
-      // Obliczamy łączną szerokość bloków
-      let totalWidthPx = 0;
-      blocks.forEach((block, idx) => {
-        const dev = block.device;
-        const devWidthM = dev.szer * 0.01;  // np. 40 cm -> 0.4 m
-        const devWidthPx = devWidthM * scale;
-        totalWidthPx += devWidthPx;
-        if (idx < blocks.length - 1) {
-          totalWidthPx += block.intervalM * scale;
-        }
-      });
+      // Jeśli nie ma żadnej grupy, koniec
+      if (groups.length === 0) return;
       
-      const centerX = svgWidth / 2;
-      let xStart = centerX - totalWidthPx / 2;
+      // Dla równomiernego rozmieszczenia, dzielimy całą szerokość SVG na tyle segmentów, ile mamy grup
+      const segmentWidth = svgWidth / groups.length;
       
-      // Rysujemy każdy egzemplarz urządzenia
-      blocks.forEach((block, idx) => {
-        const dev = block.device;
-        const devWidthM = dev.szer * 0.01;
-        const devWidthPx = devWidthM * scale;
-        const color = colorPalette[(dev.id - 1) % colorPalette.length];
+      groups.forEach((group, index) => {
+        // Środek segmentu
+        const segmentCenter = (index + 0.5) * segmentWidth;
+        // xStart dla tej grupy, aby jej łączna szerokość była wycentrowana w segmencie
+        let xStart = segmentCenter - (group.groupWidth / 2);
         
-        const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        devRect.setAttribute("x", xStart);
-        devRect.setAttribute("y", devicesY - 20);
-        devRect.setAttribute("width", devWidthPx);
-        devRect.setAttribute("height", 40);
-        devRect.setAttribute("fill", color);
-        svg.appendChild(devRect);
-        
-        const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        devLabel.setAttribute("x", xStart + devWidthPx / 2);
-        devLabel.setAttribute("y", devicesY - 25);
-        devLabel.setAttribute("text-anchor", "middle");
-        devLabel.setAttribute("font-size", "10");
-        devLabel.setAttribute("fill", "#fff");
-        devLabel.textContent = dev.nazwa;
-        svg.appendChild(devLabel);
-        
-        xStart += devWidthPx;
-        if (idx < blocks.length - 1) {
-          xStart += block.intervalM * scale;
+        // Rysujemy każdy egzemplarz w tej grupie
+        for (let i = 0; i < group.qty; i++) {
+          const devRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          devRect.setAttribute("x", xStart);
+          devRect.setAttribute("y", devicesY - 20);
+          devRect.setAttribute("width", group.devWidthPx);
+          devRect.setAttribute("height", 40);
+          const color = colorPalette[(group.device.id - 1) % colorPalette.length];
+          devRect.setAttribute("fill", color);
+          svg.appendChild(devRect);
+          
+          const devLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          devLabel.setAttribute("x", xStart + group.devWidthPx / 2);
+          devLabel.setAttribute("y", devicesY - 25);
+          devLabel.setAttribute("text-anchor", "middle");
+          devLabel.setAttribute("font-size", "10");
+          devLabel.setAttribute("fill", "#fff");
+          devLabel.textContent = group.device.nazwa;
+          svg.appendChild(devLabel);
+          
+          xStart += group.devWidthPx;
+          if (i < group.qty - 1) {
+            xStart += group.intervalM * scale;
+          }
         }
       });
     }
