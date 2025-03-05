@@ -398,8 +398,10 @@
       saveState();
     }
 
-    // Aktualizacja wizualizacji – rysujemy kratownicę (gridGroup) oraz urządzenia (devicesGroup)
-    // Dodatkowo na dolnej krawędzi kratownicy rysujemy małe czerwone kropki co 1 m, licząc od środka
+    // Aktualizacja wizualizacji – rysujemy kratownicę (gridGroup) oraz urządzenia (devicesGroup).
+    // Dodatkowo na dolnej krawędzi kratownicy umieszczamy:
+    // - Zieloną kropkę w środku
+    // - Czerwone kropki co 1 m (czyli co scale pikseli) licząc od środka, po obu stronach.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       const svgWidth = svg.clientWidth;
@@ -434,10 +436,18 @@
       trussRect.setAttribute("stroke-width", "2");
       gridGroup.appendChild(trussRect);
       
-      // Dodajemy czerwone kropki na dolnej krawędzi kratownicy
+      // Dodajemy zieloną kropkę w środku dolnej krawędzi kratownicy
       const centerX = svgWidth / 2;
       const dotRadius = 3;
       const dotY = rectY + rectHeight;
+      const greenDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      greenDot.setAttribute("cx", centerX);
+      greenDot.setAttribute("cy", dotY);
+      greenDot.setAttribute("r", dotRadius);
+      greenDot.setAttribute("fill", "green");
+      gridGroup.appendChild(greenDot);
+      
+      // Dodajemy czerwone kropki co 1 m od środka, po obu stronach
       let m = 1;
       while (true) {
         let posRight = centerX + m * scale;
@@ -606,7 +616,7 @@
       updateTrussVisualization();
     }
     
-    // Funkcja clearAll – ustawiamy dla urządzeń aktywnych ilość na 0, a dla dostępnych na 1
+    // Funkcja clearAll – ustawiamy dla aktywnych urządzeń ilość na 0, a dla dostępnych na 1
     function clearAll() {
       devices.forEach(device => {
         device.quantity = 0;
