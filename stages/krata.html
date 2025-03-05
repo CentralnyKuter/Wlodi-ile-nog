@@ -67,7 +67,7 @@
       font-size: 1em;
       font-weight: bold;
     }
-    /* Opcja globalna: odstępy liczone od środka */
+    /* Globalna opcja: odstępy liczone od środka urządzenia */
     .global-options {
       margin-bottom: 15px;
     }
@@ -154,7 +154,7 @@
         </select>
       </div>
     </div>
-    <!-- Globalna opcja: odstępy liczone od środka -->
+    <!-- Globalna opcja -->
     <div class="global-options">
       <label>
         <input type="checkbox" id="center-spacing" />
@@ -397,9 +397,11 @@
     // - Skala: svgWidth / gridLength (px/m)
     // - Wysokość kratownicy: (gridWidth / 1000) * scale
     // Urządzenia umieszczamy tak, że ich górne krawędzie są dokładnie 5px poniżej dolnej krawędzi kratownicy.
-    // Dla "Robe 800" zamiast prostokąta wstawiamy obrazek z URL('/Wlodi-ile-nog/images/800.png').
-    // W trybie domyślnym odstępy liczone są od końca urządzenia, a jeśli zaznaczony jest globalny checkbox,
-    // to odstępy liczone są od środka urządzenia.
+    // W trybie domyślnym odstępy liczone są od końca urządzenia.
+    // W trybie "od środka" odstępy są liczone od środka urządzenia, czyli:
+    //   - Środek każdego egzemplarza jest rozmieszczany w odstępach równych (interval * scale),
+    //     a lewy brzeg ustalamy jako (środek - devWidthPx/2).
+    // Obrazek dla "Robe 800" jest traktowany analogicznie – jego pozycjonowanie odbywa się w zależności od trybu.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
@@ -423,7 +425,7 @@
       trussRect.setAttribute("stroke-width", "2");
       svg.appendChild(trussRect);
       
-      // Ustalamy, że górne krawędzie urządzeń mają być dokładnie 5px poniżej dolnej krawędzi kratownicy
+      // Ustalamy, że górna krawędź urządzeń ma być dokładnie 5px poniżej dolnej krawędzi kratownicy
       const devicesTop = rectY + rectHeight + 5;
       const centerX = svgWidth / 2;
       
@@ -440,21 +442,18 @@
             // Obliczamy szerokość urządzenia (szerokość w cm -> m -> px)
             const devWidthM = device.szer * 0.01;
             const devWidthPx = devWidthM * scale;
-            // Standardowa wysokość urządzenia: przeliczona z JSON (w cm -> m -> px)
+            // Obliczamy standardową wysokość urządzenia (w cm -> m -> px)
             let devHeightPx = device.wys * 0.01 * scale;
-            // Jeśli urządzenie to "Robe 800", wstawiamy obrazek – przyjmujemy, że skalujemy go tak, jak standardowy element
+            // Jeśli urządzenie to "Robe 800", przyjmujemy takie same obliczenie wysokości jak dla innych
             const isRobe800 = device.nazwa.indexOf("Robe 800") !== -1;
-            if (isRobe800) {
-              // Nie modyfikujemy devHeightPx – obrazek zostanie umieszczony tak, że jego górna krawędź będzie na devicesTop
-              // (nie bierzemy pod uwagę naturalnej wysokości obrazka)
-              // Możesz ewentualnie ustawić: devHeightPx = device.wys * 0.01 * scale;
-            }
+            // Obliczamy groupWidth – w zależności od trybu
             let groupWidth;
             if (!useCenterSpacing) {
               // Standardowy tryb: odstępy liczone od końca urządzenia
               groupWidth = qty * devWidthPx + (qty - 1) * (intervalM * scale);
             } else {
-              // Tryb od środka: przy odstępie 0 wszystkie urządzenia nakładają się
+              // Tryb od środka: odległość między środkami urządzeń wynosi (intervalM * scale),
+              // a groupWidth = devWidthPx + (qty - 1) * (intervalM * scale)
               groupWidth = devWidthPx + (qty - 1) * (intervalM * scale);
             }
             groups.push({ device, qty, intervalM, groupWidth, devWidthPx, devHeightPx });
@@ -464,9 +463,10 @@
       
       if (groups.length === 0) return;
       
-      // Każda grupa jest wycentrowana względem całej szerokości SVG
+      // Dla każdej grupy, umieszczamy ją wycentrowaną względem całej szerokości SVG.
       groups.forEach(group => {
         if (!useCenterSpacing) {
+          // Standardowy tryb: rozmieszczamy egzemplarze sekwencyjnie
           let xStart = centerX - (group.groupWidth / 2);
           for (let i = 0; i < group.qty; i++) {
             const isRobe800 = group.device.nazwa.indexOf("Robe 800") !== -1;
@@ -510,7 +510,8 @@
             }
           }
         } else {
-          // Tryb od środka: obliczamy pozycje środków
+          // Tryb od środka: rozmieszczamy egzemplarze tak, że ich środki są oddalone o (intervalM * scale)
+          // Obliczamy grupę, jako: groupWidth = devWidthPx + (qty - 1) * (intervalM * scale)
           let xStart = centerX - (group.groupWidth / 2);
           for (let i = 0; i < group.qty; i++) {
             const centerPos = xStart + (i * (group.intervalM * scale));
