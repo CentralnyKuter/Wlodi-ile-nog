@@ -1,6 +1,6 @@
 [
     { "id": 1, "nazwa": "Robe 800", "pobor": 420, "masa": 11.5, "szer": 30, "wys": 44.4 },
-    { "id": 2, "nazwa": "Aura XIP", "pobor": 340, "masa": 18, "szer": 30.6, "wys": 38.7 },
+    { "id": 2, "nazwa": "Aura XIP", "pobor": 340, "masa": 18, "szer": 33.8, "wys": 38.7 },
     { "id": 3, "nazwa": "Quantum", "pobor": 750, "masa": 23.2, "szer": 45.2, "wys": 64.2 },
     { "id": 4, "nazwa": "Pointe", "pobor": 400, "masa": 18, "szer": 40, "wys": 55 },
     { "id": 5, "nazwa": "Pixel Strobe", "pobor": 150, "masa": 18, "szer": 40, "wys": 55 },
