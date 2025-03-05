@@ -9,7 +9,7 @@
       --container-bg: rgba(30, 30, 30, 0.85);
       --button-bg: #FF9800;
       --button-hover: #E68900;
-      --input-width: 40px;  /* większa szerokość inputów */
+      --input-width: 40px;
       --button-size: 12px;
     }
 
@@ -30,7 +30,7 @@
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
       text-align: left;
       width: 95%;
-      max-width: 900px; /* szerzej, by wszystko było w jednym rzędzie */
+      max-width: 900px;
       margin: auto;
       margin-bottom: 20px;
     }
@@ -56,7 +56,7 @@
       flex-direction: row;
       align-items: center;
       justify-content: flex-start;
-      gap: 15px; /* odstęp poziomy między blokami */
+      gap: 15px;
       margin-bottom: 10px;
       border: 1px solid #666;
       border-radius: 6px;
@@ -68,7 +68,7 @@
       align-items: center;
       gap: 10px;
       font-size: 1em;
-      min-width: 220px; /* aby checkbox i nazwa mieściły się w jednej linii */
+      min-width: 220px;
     }
 
     .quantity-controls {
@@ -111,7 +111,6 @@
       flex: 1;
     }
 
-    /* Kontener na wizualizację kraty */
     .visualization-container {
       width: 90%;
       max-width: 900px;
@@ -130,7 +129,7 @@
   <div class="container">
     <h2>Choose your weapon!</h2>
 
-    <!-- Sekcja do ustawiania długości kraty -->
+    <!-- Ustawianie długości kraty -->
     <div class="grid-length-container">
       <div class="grid-length-label">Długość kraty (m):</div>
       <div class="quantity-controls">
@@ -156,11 +155,10 @@
     <h3 id="total-energy">Całkowity pobór: 0 W</h3>
   </div>
 
-  <!-- Kontener na naszą wizualizację -->
+  <!-- Wizualizacja -->
   <div class="visualization-container">
     <h3>Wizualizacja rozmieszczenia</h3>
-    <!-- SVG, w którym będziemy rysować kratę i urządzenia -->
-    <svg id="truss-visualization" width="700" height="120" style="border:1px solid #fff;"></svg>
+    <svg id="truss-visualization" width="700" height="500" style="border:1px solid #fff;"></svg>
   </div>
 
   <script>
@@ -169,7 +167,7 @@
     let allDevices = [];        // Wszystkie urządzenia z pliku JSON
     let gridLength = 12;        // Domyślna długość kraty w metrach
 
-    // Kolory do wizualizacji:
+    // Kolory do wizualizacji
     const colorPalette = [
       "#e6194b","#3cb44b","#ffe119","#0082c8","#f58231","#911eb4",
       "#46f0f0","#f032e6","#d2f53c","#fabebe","#008080","#e6beff",
@@ -208,14 +206,12 @@
       // Przywracanie urządzeń
       state.devices.forEach(savedDevice => {
         const device = allDevices.find(d => d.id === savedDevice.id);
-        if (device) {
-          if (!devices.find(d => d.id === device.id)) {
-            devices.push(device);
-          }
+        if (device && !devices.find(d => d.id === device.id)) {
+          devices.push(device);
         }
       });
 
-      // Przywracanie listy dostępnych urządzeń
+      // Przywracanie listy dostępnych
       if(state.availableDevicesIds) {
         availableDevices = allDevices.filter(d => state.availableDevicesIds.includes(d.id));
       }
@@ -229,7 +225,7 @@
       renderDeviceList();  
       populateDeviceSelection();
 
-      // Teraz uzupełniamy inputy z odczytanych wartości
+      // Uzupełniamy inputy
       state.devices.forEach(savedDevice => {
         const quantityInput = document.getElementById('quantity-' + savedDevice.id);
         const checkbox = document.getElementById('device-' + savedDevice.id);
@@ -275,12 +271,11 @@
       });
     }
 
-    // Dodaje jeden wiersz (blok) dla konkretnego urządzenia
     function addDeviceToList(device) {
       const container = document.createElement('div');
       container.classList.add('device-container');
 
-      // Nazwa urządzenia + checkbox
+      // Nazwa + checkbox
       const labelContainer = document.createElement('div');
       labelContainer.classList.add('device-label');
 
@@ -318,7 +313,7 @@
 
       const quantityInput = document.createElement('input');
       quantityInput.type = 'number';
-      quantityInput.value = 0; // Domyśl
+      quantityInput.value = 0;
       quantityInput.min = 0;
       quantityInput.id = 'quantity-' + device.id;
       quantityInput.classList.add('quantity-input');
@@ -341,7 +336,7 @@
       quantityContainer.appendChild(quantityInput);
       quantityContainer.appendChild(plusButton);
 
-      // Kontrolki interwału (odstępu)
+      // Kontrolki interwału
       const intervalContainer = document.createElement('div');
       intervalContainer.classList.add('quantity-controls');
 
@@ -350,10 +345,10 @@
       minusIntervalButton.classList.add('quantity-button');
       minusIntervalButton.onclick = function () {
         let intervalInput = document.getElementById('interval-' + device.id);
-        let val = parseFloat(intervalInput.value);
+        let val = parseFloat(intervalInput.value) || 0;
         if (val > 0) {
           val = (val - 0.1).toFixed(1);
-          if(val < 0) val = 0;
+          if (val < 0) val = 0;
           intervalInput.value = val;
           calculateEnergy();
           saveState();
@@ -362,7 +357,7 @@
 
       const intervalInput = document.createElement('input');
       intervalInput.type = 'number';
-      intervalInput.value = 1.0; // Domyślnie 1.0 m
+      intervalInput.value = 1.0;
       intervalInput.min = 0;
       intervalInput.step = 0.1;
       intervalInput.id = 'interval-' + device.id;
@@ -377,7 +372,7 @@
       plusIntervalButton.classList.add('quantity-button');
       plusIntervalButton.onclick = function () {
         let intervalInputElem = document.getElementById('interval-' + device.id);
-        let val = parseFloat(intervalInputElem.value);
+        let val = parseFloat(intervalInputElem.value) || 0;
         val = (val + 0.1).toFixed(1);
         intervalInputElem.value = val;
         calculateEnergy();
@@ -388,6 +383,7 @@
       intervalContainer.appendChild(intervalInput);
       intervalContainer.appendChild(plusIntervalButton);
 
+      // Dodajemy wszystko do głównego kontenera urządzenia
       container.appendChild(labelContainer);
       container.appendChild(quantityContainer);
       container.appendChild(intervalContainer);
@@ -395,19 +391,16 @@
       document.getElementById('device-list').appendChild(container);
     }
 
-    // Dodaje urządzenie z selecta do listy
     function addSelectedDevice() {
       const select = document.getElementById('device-select');
       const selectedId = parseInt(select.value);
       const selectedDevice = availableDevices.find(d => d.id === selectedId);
       if (!selectedDevice) return;
 
-      // Jeśli go nie ma jeszcze w devices, to dodaj
-      const exists = devices.find(d => d.id === selectedId);
-      if (!exists) {
+      // Jeśli nie ma jeszcze w devices, to dodaj
+      if (!devices.find(d => d.id === selectedId)) {
         devices.push(selectedDevice);
       }
-
       // Usuwamy z listy dostępnych
       availableDevices = availableDevices.filter(d => d.id !== selectedId);
       
@@ -417,7 +410,6 @@
       saveState();
     }
 
-    // Oblicza pobór mocy i odświeża wizualizację
     function calculateEnergy() {
       let totalPower = 0;
       devices.forEach(device => {
@@ -433,7 +425,8 @@
       updateTrussVisualization();
     }
 
-    // Wizualizacja na kracie (w SVG), rozsuwa urządzenia symetrycznie od środka
+    // Najważniejsza zmiana: każde urządzenie rysujemy w swoim wierszu
+    // i centrowane jest niezależnie.
     function updateTrussVisualization() {
       const svg = document.getElementById('truss-visualization');
       while (svg.firstChild) {
@@ -442,115 +435,88 @@
 
       const svgWidth = svg.clientWidth;  
       const svgHeight = svg.clientHeight;
+      const centerX = svgWidth / 2;
+      const scale = svgWidth / gridLength; // px/m
 
-      // Rysujemy linię kraty (środek)
-      const lineY = svgHeight / 2;
-      const trussLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      trussLine.setAttribute("x1", "0");
-      trussLine.setAttribute("y1", lineY);
-      trussLine.setAttribute("x2", svgWidth);
-      trussLine.setAttribute("y2", lineY);
-      trussLine.setAttribute("stroke", "#ccc");
-      trussLine.setAttribute("stroke-width", "2");
-      svg.appendChild(trussLine);
+      // Rysujemy linię kraty przez całą szerokość (opcjonalna)
+      const baseLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      baseLine.setAttribute("x1", "0");
+      baseLine.setAttribute("y1", "0");
+      baseLine.setAttribute("x2", svgWidth);
+      baseLine.setAttribute("y2", "0");
+      baseLine.setAttribute("stroke", "#ccc");
+      baseLine.setAttribute("stroke-width", "2");
+      svg.appendChild(baseLine);
 
-      const centerX = svgWidth / 2;  
-      // Skala px/m
-      const scale = svgWidth / gridLength;
+      // Wysokość (y) kolejnych rzędów
+      let rowY = 40;   // początek pierwszego wiersza
+      const rowHeight = 60; // odstęp pionowy między urządzeniami
 
-      // Utworzymy tablicę "blocks", gdzie każdy element reprezentuje
-      // jeden egzemplarz (sztukę) danego urządzenia.
-      // Będziemy tam także trzymać "intervalM" dla obliczeń
-      let blocks = [];
-
+      // Przechodzimy po devices
       devices.forEach(device => {
         const checkbox = document.getElementById('device-' + device.id);
         const quantityInput = document.getElementById('quantity-' + device.id);
         const intervalInput = document.getElementById('interval-' + device.id);
 
-        if (checkbox && checkbox.checked && quantityInput && intervalInput) {
-          const qty = parseInt(quantityInput.value) || 0;
-          const intervalM = parseFloat(intervalInput.value) || 0;
-          
-          for (let i = 0; i < qty; i++) {
-            blocks.push({
-              device: device,
-              intervalM: intervalM
-            });
+        if (!checkbox || !checkbox.checked) return; // pomijamy odznaczone
+        const qty = parseInt(quantityInput.value) || 0;
+        if (qty <= 0) return; // pomijamy zero egzemplarzy
+
+        const intervalM = parseFloat(intervalInput.value) || 0;
+
+        // Tworzymy "blok egzemplarzy" => pętla for(qty)
+        // Najpierw obliczamy łączną szerokość
+        const devWidthM = device.szer * 0.01; // 40 cm => 0.4 m
+        const devWidthPx = devWidthM * scale;
+        let totalWidthPx = 0;
+        for (let i = 0; i < qty; i++) {
+          totalWidthPx += devWidthPx;
+          if (i < qty - 1) {
+            // dodaj interwał tylko pomiędzy egzemplarzami
+            totalWidthPx += intervalM * scale;
           }
         }
-      });
 
-      // Jeśli brak egzemplarzy, koniec
-      if (blocks.length === 0) return;
+        // Wyznaczamy xStart, by wycentrować
+        let xStart = centerX - (totalWidthPx / 2);
 
-      // Obliczamy łączną szerokość (w pikselach), aby wyśrodkować
-      // Każdy block: ma szerokość deviceWidthPx + ewentualny odstęp (intervalPx) po nim
-      // device.szer jest w JSON np. 40 => to 40 cm => 0.4 m
-      // Lepiej przeliczyć: deviceWidthM = device.szer * 0.01
-      // a w px => deviceWidthPx = deviceWidthM * scale
-      let totalWidthPx = 0;
-
-      blocks.forEach((block, idx) => {
-        const dev = block.device;
-        const wM = dev.szer * 0.01;  // np. 40 => 0.4 m
-        const wPx = wM * scale;
-        totalWidthPx += wPx;
-
-        // Interwał – dodajemy go po *każdym* egzemplarzu (poza ostatnim),
-        // w tym przykładzie tak przyjmujemy. 
-        // Jeżeli chcesz, aby interwał był tylko między egzemplarzami TEGO SAMEGO typu,
-        // należałoby sprawdzić, czy blocks[idx+1] ma to samo device.id, itp.
-        // Teraz po prostu dodajemy i tyle:
-        if (idx < blocks.length - 1) {
-          const intervalPx = block.intervalM * scale;
-          totalWidthPx += intervalPx;
-        }
-      });
-
-      // Start rysowania, żeby to było wycentrowane:
-      let xStart = centerX - totalWidthPx / 2;
-
-      // Teraz rzeczywiste rysowanie
-      blocks.forEach((block, idx) => {
-        const dev = block.device;
-        const colorIndex = (dev.id - 1) % colorPalette.length;
+        // Kolor
+        const colorIndex = (device.id - 1) % colorPalette.length;
         const color = colorPalette[colorIndex];
 
-        // szerokość egzemplarza w pikselach
-        const devWidthM = dev.szer * 0.01;
-        const devWidthPx = devWidthM * scale;
+        // Rysujemy egzemplarze
+        for (let i = 0; i < qty; i++) {
+          // rect
+          const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          rect.setAttribute("x", xStart);
+          rect.setAttribute("y", rowY - 20);
+          rect.setAttribute("width", devWidthPx);
+          rect.setAttribute("height", 40);
+          rect.setAttribute("fill", color);
+          svg.appendChild(rect);
 
-        // Rysujemy prostokąt
-        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        rect.setAttribute("x", xStart);
-        rect.setAttribute("y", lineY - 20);
-        rect.setAttribute("width", devWidthPx);
-        rect.setAttribute("height", 40);
-        rect.setAttribute("fill", color);
-        svg.appendChild(rect);
+          // label
+          const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          label.setAttribute("x", xStart + devWidthPx / 2);
+          label.setAttribute("y", rowY - 25);
+          label.setAttribute("text-anchor", "middle");
+          label.setAttribute("font-size", "10");
+          label.setAttribute("fill", "#fff");
+          label.textContent = device.nazwa;
+          svg.appendChild(label);
 
-        // Etykieta (nazwa)
-        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        label.setAttribute("x", xStart + devWidthPx / 2);
-        label.setAttribute("y", lineY - 25);
-        label.setAttribute("text-anchor", "middle");
-        label.setAttribute("font-size", "10");
-        label.setAttribute("fill", "#fff");
-        label.textContent = dev.nazwa;
-        svg.appendChild(label);
-
-        // Przesuwamy xStart do rysowania kolejnego egzemplarza
-        xStart += devWidthPx;
-        if (idx < blocks.length - 1) {
-          // Dodajemy interwał
-          const intervalPx = block.intervalM * scale;
-          xStart += intervalPx;
+          // Przesuń xStart dla kolejnego egzemplarza
+          xStart += devWidthPx;
+          if (i < qty - 1) {
+            xStart += intervalM * scale;
+          }
         }
+
+        // Po narysowaniu jednego urządzenia, przechodzimy do kolejnej linii
+        rowY += rowHeight;
       });
     }
 
-    // Kasowanie stanu
     function clearAll() {
       localStorage.removeItem('deviceState');
       if (allDevices.length > 0) {
@@ -602,21 +568,19 @@
       });
     }
 
-    // Inicjowanie po załadowaniu strony
     window.onload = function() {
-      // Wstaw ścieżkę do devices.json lub wklej dane na sztywno
+      // Zmień ścieżkę jeśli trzeba
       fetch('/Wlodi-ile-nog/data/devices.json')
         .then(response => response.json())
         .then(data => {
           allDevices = data;
-          // Na starcie: 5 urządzeń w "devices", reszta w "availableDevices"
           devices = allDevices.slice(0, 5);
           availableDevices = allDevices.slice(5);
 
           renderDeviceList();
           populateDeviceSelection();
           initGridLengthControls(); 
-          restoreState();     
+          restoreState();
           calculateEnergy();
         })
         .catch(error => console.error("Błąd ładowania danych:", error));
